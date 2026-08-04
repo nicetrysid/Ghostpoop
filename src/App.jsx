@@ -1,5 +1,5 @@
-import TheLastWords from "./TheLastWords";
+import FarmGame from "./FarmGame";
 
 export default function App() {
-  return <TheLastWords />;
+  return <FarmGame />;
 }
