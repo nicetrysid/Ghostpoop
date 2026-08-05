@@ -1,5 +1,5 @@
-import FarmGame from "./FarmGame";
+import Centerville from "./Centerville";
 
 export default function App() {
-  return <FarmGame />;
+  return <Centerville />;
 }

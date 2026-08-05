@@ -1,7 +1,7 @@
 // All pixel art in this game is authored here as small character grids.
 // '.' = transparent. Every other character is a palette key -> CSS color.
 
-// ---------------------------------------------------------------- terrain --
+// ---------------------------------------------------------------- ground --
 
 export const GRASS_A = {
   palette: { 1: "#4a7c3f", 2: "#5a934b" },
@@ -31,48 +31,6 @@ export const GRASS_B = {
   ],
 };
 
-export const TILLED = {
-  palette: { 1: "#6b4a2f", 2: "#5a3d26", 3: "#7d5738" },
-  rows: [
-    "33333333",
-    "11111111",
-    "22222222",
-    "11111111",
-    "33333333",
-    "11111111",
-    "22222222",
-    "11111111",
-  ],
-};
-
-export const WATERED = {
-  palette: { 1: "#4a3a30", 2: "#3f4d55", 3: "#5c4c34", 4: "#6a5d3f" },
-  rows: [
-    "44444444",
-    "11111111",
-    "22222222",
-    "11114111",
-    "33333333",
-    "11111411",
-    "22222222",
-    "11111111",
-  ],
-};
-
-export const PATH = {
-  palette: { 1: "#a89a86", 2: "#998a76" },
-  rows: [
-    "11112222",
-    "11112222",
-    "11112222",
-    "11112222",
-    "22221111",
-    "22221111",
-    "22221111",
-    "22221111",
-  ],
-};
-
 export const WATER = {
   palette: { 1: "#3a6ea5", 2: "#4a7fb5", 3: "#5a90c5" },
   rows: [
@@ -87,17 +45,34 @@ export const WATER = {
   ],
 };
 
-export const FENCE = {
-  palette: { g: "#4a7c3f", w: "#8a6a45", d: "#5c4630" },
+// canyon rim — red sandstone
+export const BOULDER = {
+  palette: { 1: "#9c5a3f", 2: "#864a32", 3: "#b06f4f" },
   rows: [
-    "gg.gg.gg",
-    "gg.gg.gg",
-    "wwwwwwww",
-    "gg.gg.gg",
-    "gg.gg.gg",
-    "gg.gg.gg",
-    "wwwwwwww",
-    "gg.gg.gg",
+    "11122311",
+    "12233211",
+    "22333221",
+    "13322331",
+    "31133113",
+    "22333221",
+    "12233211",
+    "11122311",
+  ],
+};
+
+// -------------------------------------------------------------- landmarks --
+
+export const BUSH = {
+  palette: { l: "#3f7a3a", d: "#2f5e2c", b: "#1f3d1c" },
+  rows: [
+    "..dlll..",
+    ".lllllll",
+    "llllllll",
+    "lldllldl",
+    "llllllll",
+    ".lllllll",
+    "..bbbb..",
+    "........",
   ],
 };
 
@@ -115,108 +90,135 @@ export const TREE = {
   ],
 };
 
-export const ROOF = {
-  palette: { 1: "#8a3b2e", 2: "#7a3226" },
+export const MOUND = {
+  palette: { 1: "#8a6a45", 2: "#6b4a2f", 3: "#3d2a1a" },
   rows: [
+    "..1111..",
+    ".111111.",
     "11111111",
-    "22222222",
-    "11111111",
-    "22222222",
-    "11111111",
-    "22222222",
-    "11111111",
-    "22222222",
+    "11122111",
+    "11233211",
+    "11322311",
+    "..3333..",
+    "........",
   ],
 };
 
-export const WALL = {
-  palette: { 1: "#c9b28a", 2: "#b89e73" },
+export const MARKET = {
+  palette: { a: "#5a90c5", w: "#8a6a45", t: "#c9b28a" },
   rows: [
-    "11111111",
-    "11111111",
-    "22222222",
-    "11111111",
-    "11111111",
-    "22222222",
-    "11111111",
-    "11111111",
+    "aaaaaaaa",
+    "aaaaaaaa",
+    "........",
+    "ttttttt.",
+    "wwwwwwww",
+    "w......w",
+    "w......w",
+    "........",
   ],
 };
 
-export const DOOR = {
-  palette: { 1: "#6b4a2f", 2: "#5a3d26", k: "#e8c66b" },
+export const HOUSEBOAT = {
+  palette: { h: "#6b4a2f", r: "#8a3b2e", w: "#3a6ea5" },
   rows: [
-    "11111111",
-    "11222211",
-    "12222221",
-    "12222221",
-    "12222k21",
-    "12222221",
-    "12222221",
-    "11111111",
+    "..rrrr..",
+    ".rhhhhr.",
+    "..hhhh..",
+    "hhhhhhhh",
+    "hhhhhhhh",
+    "wwwwwwww",
+    "wwwwwwww",
+    "wwwwwwww",
   ],
 };
 
-// ------------------------------------------------------------------ crops --
-
-export const CROP_STAGES = [
-  // stage 0: just planted (a small seed mound so planting has visible feedback)
+// player burrow — three stages, drawn instead of MOUND at the home tile
+export const BURROW_STAGES = [
   {
-    palette: { d: "#3d2a1a" },
+    // bare hole
+    palette: { 1: "#8a6a45", 2: "#3d2a1a" },
     rows: [
-      "........",
-      "........",
-      "........",
-      "...dd...",
-      "..dddd..",
-      "........",
-      "........",
+      "..1111..",
+      ".111111.",
+      "11111111",
+      "11122111",
+      "11222211",
+      "11222211",
+      "..2222..",
       "........",
     ],
   },
-  // stage 1: sprout
   {
-    palette: { g: "#5a934b" },
+    // bedding added — soft cream tuft at the entrance
+    palette: { 1: "#8a6a45", 2: "#3d2a1a", c: "#e8dcc0" },
     rows: [
-      "........",
-      "........",
-      "...g....",
-      "..ggg...",
-      "........",
-      "........",
-      "........",
+      "..1111..",
+      ".111111.",
+      "11111111",
+      "11122111",
+      "1c2222c1",
+      "1c2222c1",
+      "..2222..",
       "........",
     ],
   },
-  // stage 2: growing
   {
-    palette: { g: "#4a7c3f", s: "#3a6b2f" },
+    // furnished — seed stash visible alongside the bedding
+    palette: { 1: "#8a6a45", 2: "#3d2a1a", c: "#e8dcc0", s: "#d9a441" },
     rows: [
-      "........",
-      ".g....g.",
-      "..g..g..",
-      "...gg...",
-      "..gggg..",
-      "...ss...",
-      "...ss...",
-      "........",
-    ],
-  },
-  // stage 3: ripe (turnip)
-  {
-    palette: { g: "#4a7c3f", r: "#c9622f", w: "#e8a56b" },
-    rows: [
-      "........",
-      ".gg..gg.",
-      "..gggg..",
-      "...rr...",
-      "..rrrr..",
-      "..rwrr..",
-      "...rr...",
+      "..1111..",
+      ".111111.",
+      "1s111s11",
+      "11122111",
+      "1c2222c1",
+      "1c2222c1",
+      "..2222..",
       "........",
     ],
   },
 ];
+
+// ---------------------------------------------------------------- pickups --
+
+export const SEED_PICKUP = {
+  palette: { s: "#d9a441", d: "#a97a2f" },
+  rows: [
+    "........",
+    "........",
+    "..s..s..",
+    ".s.d.s..",
+    "..s..s..",
+    "........",
+    "........",
+    "........",
+  ],
+};
+
+export const BEDDING_PICKUP = {
+  palette: { c: "#e8dcc0", d: "#c9b896" },
+  rows: [
+    "........",
+    "........",
+    ".cc.cc..",
+    "cddccddc",
+    ".cc.cc..",
+    "........",
+    "........",
+    "........",
+  ],
+};
+
+export const TILE_SPRITES = {
+  G: [GRASS_A, GRASS_B],
+  W: [WATER],
+  B: [BOULDER],
+  K: [BUSH],
+  N: [MOUND],
+  R: [TREE],
+  M: [MARKET],
+  Y: [HOUSEBOAT],
+  T: [TREE],
+};
 
 // -------------------------------------------------------------- characters --
 
@@ -277,16 +279,21 @@ export function makeMouseSprites(fur, shadow) {
 }
 
 export const PLAYER_SPRITES = makeMouseSprites("#d8d2c6", "#b0a99c");
-export const NPC1_SPRITES = makeMouseSprites("#b98a63", "#8f6a4c"); // Hazel
-export const NPC2_SPRITES = makeMouseSprites("#8fa3b3", "#6d7f8d"); // Reed
+export const WEG_SPRITES = makeMouseSprites("#8a8478", "#69645a");
+export const SKITTERS_SPRITES = makeMouseSprites("#c97b4a", "#a45f37");
+export const DENNIS_SPRITES = makeMouseSprites("#8a7048", "#6b5636");
+export const JEFF_SPRITES = makeMouseSprites("#e8c66b", "#c9a94a");
 
-export const TILE_SPRITES = {
-  G: [GRASS_A, GRASS_B],
-  P: [PATH],
-  F: [FENCE],
-  T: [TREE],
-  R: [ROOF],
-  W: [WALL],
-  D: [DOOR],
-  O: [WATER],
+export const NPC_SPRITE_SETS = {
+  weg: WEG_SPRITES,
+  skitters: SKITTERS_SPRITES,
+  dennis: DENNIS_SPRITES,
+  jeff: JEFF_SPRITES,
+};
+
+export const NPC_SCALE = {
+  weg: 1,
+  skitters: 1,
+  dennis: 1,
+  jeff: 0.8, // Jeff's a kit — smaller
 };

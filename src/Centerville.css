@@ -1,4 +1,4 @@
-.farm-game {
+.cv-game {
   min-height: 100vh;
   display: flex;
   flex-wrap: wrap;
@@ -6,28 +6,28 @@
   justify-content: center;
   gap: 24px;
   padding: 32px 16px;
-  background: #1c2317;
+  background: #241c16;
   font-family: "Courier New", monospace;
   color: #eee6d3;
 }
 
-.farm-stage {
+.cv-stage {
   position: relative;
-  border: 4px solid #4a3320;
+  border: 4px solid #6b4530;
   border-radius: 4px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
 }
 
-.farm-canvas {
+.cv-canvas {
   display: block;
-  width: 896px;
-  height: 640px;
+  width: 1152px;
+  height: 896px;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
-  background: #2d3a20;
+  background: #3a4a2f;
 }
 
-.farm-hint {
+.cv-hint {
   position: absolute;
   left: 0;
   right: 0;
@@ -39,24 +39,25 @@
   pointer-events: none;
 }
 
-.farm-toast {
+.cv-toast {
   position: absolute;
   top: 10px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(20, 16, 10, 0.85);
-  border: 2px solid #e8c66b;
+  max-width: 80%;
+  background: rgba(24, 16, 10, 0.88);
+  border: 2px solid #d9a441;
   border-radius: 4px;
   padding: 6px 14px;
   font-size: 13px;
   color: #ffe9a8;
-  white-space: nowrap;
+  text-align: center;
 }
 
-.farm-sleep-overlay {
+.cv-sleep-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(10, 12, 30, 0.75);
+  background: rgba(20, 14, 30, 0.75);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -65,30 +66,30 @@
   letter-spacing: 4px;
 }
 
-.farm-dialogue {
+.cv-dialogue {
   position: absolute;
   left: 24px;
   right: 24px;
   bottom: 36px;
-  background: rgba(20, 16, 10, 0.92);
-  border: 3px solid #e8c66b;
+  background: rgba(24, 16, 10, 0.92);
+  border: 3px solid #d9a441;
   border-radius: 6px;
   padding: 12px 16px;
 }
 
-.farm-dialogue-name {
-  color: #e8c66b;
+.cv-dialogue-name {
+  color: #d9a441;
   font-weight: bold;
   font-size: 13px;
   margin-bottom: 4px;
 }
 
-.farm-dialogue-text {
+.cv-dialogue-text {
   font-size: 14px;
   color: #f5efe0;
 }
 
-.farm-dialogue-hint {
+.cv-dialogue-hint {
   position: absolute;
   right: 12px;
   bottom: 8px;
@@ -96,26 +97,26 @@
   color: #b8ac8a;
 }
 
-.farm-hud {
-  width: 260px;
-  background: #26301c;
-  border: 3px solid #4a3320;
+.cv-hud {
+  width: 270px;
+  background: #2f2419;
+  border: 3px solid #6b4530;
   border-radius: 6px;
   padding: 16px;
 }
 
-.farm-hud h1 {
+.cv-hud h1 {
   font-size: 18px;
   margin: 0 0 12px;
-  color: #e8c66b;
+  color: #d9a441;
 }
 
-.farm-stat {
+.cv-stat {
   font-size: 14px;
   margin-bottom: 12px;
 }
 
-.farm-stat-block {
+.cv-stat-block {
   margin-bottom: 14px;
   font-size: 13px;
   display: flex;
@@ -123,62 +124,32 @@
   gap: 6px;
 }
 
-.farm-bar {
-  height: 12px;
-  background: #14180f;
-  border: 1px solid #4a3320;
-  border-radius: 3px;
-  overflow: hidden;
-}
-
-.farm-bar-fill {
-  height: 100%;
-}
-
-.farm-bar-stamina {
-  background: linear-gradient(90deg, #7fbf4a, #a8d868);
-  transition: width 0.2s ease;
-}
-
-.farm-tools {
+.cv-carry-row {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 
-.farm-tool {
-  font-family: inherit;
-  font-size: 12px;
-  text-align: left;
-  padding: 6px 8px;
-  background: #1c2317;
-  color: #cfc6ab;
-  border: 1px solid #4a3320;
-  border-radius: 3px;
-  cursor: pointer;
+.cv-burrow-progress {
+  font-size: 11px;
+  color: #b8ac8a;
 }
 
-.farm-tool.active {
-  background: #4a5a2f;
-  color: #fff;
-  border-color: #e8c66b;
-}
-
-.farm-friend-row {
+.cv-friend-row {
   display: flex;
   justify-content: space-between;
   font-size: 12px;
 }
 
-.farm-hearts {
+.cv-hearts {
   color: #d9607a;
   letter-spacing: 1px;
 }
 
-.farm-controls {
+.cv-controls {
   margin-top: 16px;
   padding-top: 12px;
-  border-top: 1px solid #4a3320;
+  border-top: 1px solid #6b4530;
   font-size: 11px;
   color: #a89a7c;
   display: flex;
