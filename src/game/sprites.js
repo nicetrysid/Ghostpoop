@@ -222,6 +222,34 @@ export const BEDDING_PICKUP = {
   ],
 };
 
+export const WOOD_PICKUP = {
+  palette: { 1: "#8a6a45", 2: "#6b4a2f" },
+  rows: [
+    "........",
+    ".11.....",
+    "1221....",
+    ".2211...",
+    "....1122",
+    "...122.1",
+    ".....11.",
+    "........",
+  ],
+};
+
+export const STONE_PICKUP = {
+  palette: { 1: "#8a8a8a", 2: "#6a6a6a", 3: "#a0a0a0" },
+  rows: [
+    "........",
+    "........",
+    "..123...",
+    ".122221.",
+    "12222221",
+    ".111111.",
+    "........",
+    "........",
+  ],
+};
+
 export const TILE_SPRITES = {
   G: [GRASS_A, GRASS_B],
   W: [WATER],
@@ -368,4 +396,180 @@ export const NPC_SCALE = {
 export const EXCLAIM = {
   palette: { r: "#e8503a" },
   rows: [".r.", ".r.", ".r.", "...", ".r."],
+};
+
+// -------------------------------------------------------- burrow interior --
+
+export const FLOOR = {
+  palette: { 1: "#6b5540", 2: "#5c4835" },
+  rows: [
+    "11211121",
+    "21121211",
+    "11211121",
+    "21121211",
+    "11211121",
+    "21121211",
+    "11211121",
+    "21121211",
+  ],
+};
+
+export const DUG_WALL = {
+  palette: { 1: "#4a3826", 2: "#3a2c1c" },
+  rows: [
+    "11111111",
+    "12121212",
+    "11111111",
+    "21212121",
+    "11111111",
+    "12121212",
+    "11111111",
+    "21212121",
+  ],
+};
+
+export const DIG_FRONTIER = {
+  palette: { 1: "#5a4530", 2: "#3d2a1a", 3: "#6b4a2f" },
+  rows: [
+    "13131313",
+    "31313131",
+    "13131313",
+    "31313131",
+    "13131313",
+    "31313131",
+    "13131313",
+    "31313131",
+  ],
+};
+
+export const INTERIOR_DOOR = {
+  palette: { 1: "#6b4a2f", 3: "#3d2a1a" },
+  rows: [
+    "11111111",
+    "1......1",
+    "1.3.3..1",
+    "1......1",
+    "1.3.3..1",
+    "1......1",
+    "1.3.3..1",
+    "11111111",
+  ],
+};
+
+export const SLEEPING_NOOK = {
+  palette: { c: "#e8dcc0", d: "#c9b896", o: "#8a6a45" },
+  rows: [
+    "........",
+    ".cccccc.",
+    "cddddddc",
+    "cddddddc",
+    ".cccccc.",
+    "........",
+    "oooooooo",
+    "........",
+  ],
+};
+
+export const WORKBENCH = {
+  palette: { w: "#8a6a45", d: "#5c3f26", t: "#a0a0a0" },
+  rows: [
+    "........",
+    "wwwwwwww",
+    "wtd..dtw",
+    "wwwwwwww",
+    "..w..w..",
+    "..w..w..",
+    "........",
+    "........",
+  ],
+};
+
+export const FURNITURE = {
+  stool: {
+    palette: { w: "#8a6a45", d: "#5c3f26" },
+    rows: [
+      "........",
+      "..wwww..",
+      ".wwwwww.",
+      "wwwwwwww",
+      "..w..w..",
+      "..w..w..",
+      "........",
+      "........",
+    ],
+  },
+  table: {
+    palette: { w: "#8a6a45", d: "#5c3f26" },
+    rows: [
+      "........",
+      "wwwwwwww",
+      "wwwwwwww",
+      "........",
+      ".w....w.",
+      ".w....w.",
+      "........",
+      "........",
+    ],
+  },
+  shelf: {
+    palette: { w: "#8a6a45", d: "#5c3f26", i: "#d9a441" },
+    rows: [
+      "wwwwwwww",
+      "w.i..i.w",
+      "wwwwwwww",
+      "w..i...w",
+      "wwwwwwww",
+      "........",
+      "........",
+      "........",
+    ],
+  },
+  rug: {
+    palette: { c: "#c9622f", d: "#a34a22", e: "#e8a56b" },
+    rows: [
+      "........",
+      ".cccccc.",
+      ".cdeedc.",
+      ".cdeedc.",
+      ".cdeedc.",
+      ".cccccc.",
+      "........",
+      "........",
+    ],
+  },
+  hearth: {
+    palette: { s: "#8a8a8a", f: "#e8503a", y: "#f0a030" },
+    rows: [
+      "........",
+      "ssssssss",
+      "s.fyf..s",
+      "s.fff..s",
+      "ssssssss",
+      "........",
+      "........",
+      "........",
+    ],
+  },
+  sprout: {
+    palette: { p: "#a3714a", g: "#4a7c3f" },
+    rows: [
+      "........",
+      "...g....",
+      "..ggg...",
+      "...g....",
+      "..ppp...",
+      ".ppppp..",
+      "..ppp...",
+      "........",
+    ],
+  },
+};
+
+export const FURNITURE_LABEL = {
+  stool: "a stool",
+  table: "a table",
+  shelf: "a shelf",
+  rug: "a rug",
+  hearth: "a hearth",
+  sprout: "a potted sprout",
 };

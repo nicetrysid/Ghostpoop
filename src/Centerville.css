@@ -108,6 +108,66 @@
   color: #b8ac8a;
 }
 
+.cv-craft-menu {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  bottom: 36px;
+  max-height: calc(100% - 60px);
+  overflow-y: auto;
+  background: rgba(20, 15, 10, 0.95);
+  border: 3px solid #d9a441;
+  border-radius: 6px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cv-craft-title {
+  color: #d9a441;
+  font-weight: bold;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.cv-craft-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  background: #2f2419;
+  border: 2px solid #6b4530;
+  border-radius: 4px;
+  color: #eee6d3;
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.cv-craft-item:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.cv-craft-cost {
+  font-size: 11px;
+  color: #b8ac8a;
+}
+
+.cv-craft-close {
+  margin-top: 4px;
+  padding: 8px 10px;
+  background: #3a2c1c;
+  border: 2px solid #6b4530;
+  border-radius: 4px;
+  color: #eee6d3;
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
 .cv-touch-controls {
   display: flex;
   align-items: center;

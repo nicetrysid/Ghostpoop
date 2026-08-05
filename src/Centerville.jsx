@@ -3,12 +3,22 @@ import { drawSprite } from "./game/pixelSprite";
 import {
   BEDDING_PICKUP,
   BURROW_STAGES,
+  DIG_FRONTIER,
+  DUG_WALL,
   EXCLAIM,
+  FLOOR,
+  FURNITURE,
+  FURNITURE_LABEL,
+  INTERIOR_DOOR,
   NPC_SCALE,
   NPC_SPRITE_SETS,
   PLAYER_SPRITES,
   SEED_PICKUP,
+  SLEEPING_NOOK,
+  STONE_PICKUP,
   TILE_SPRITES,
+  WOOD_PICKUP,
+  WORKBENCH,
 } from "./game/sprites";
 import {
   GRID_H,
@@ -21,6 +31,7 @@ import {
   isWalkable,
   tileAt,
 } from "./game/map";
+import { DIG_COSTS, MAX_DIG_STAGE, NPC_FURNITURE_GIFT, RECIPES, fixtures, interiorDims, tileKind } from "./game/burrow";
 import "./Centerville.css";
 
 const CELL = TILE_SIZE / 8;
@@ -65,14 +76,14 @@ const FLAVOR_TEXT = {
   B: "The canyon wall. Solid red sandstone.",
 };
 
-const RESOURCE_LABEL = { seeds: "a seed", bedding: "some bedding" };
-const BURROW_LABEL = ["a bare hole", "softer, with bedding tucked in", "properly furnished"];
-
-function getBurrowStage(banked) {
-  if (banked.bedding >= 3 && banked.seeds >= 3) return 2;
-  if (banked.bedding >= 3) return 1;
-  return 0;
-}
+const RESOURCE_LABEL = { seeds: "a seed", bedding: "some bedding", wood: "some wood", stone: "a stone" };
+const RESOURCE_ICON = { seeds: "🌾", bedding: "🪶", wood: "🪵", stone: "🪨" };
+const RESOURCE_SPRITE = { seeds: SEED_PICKUP, bedding: BEDDING_PICKUP, wood: WOOD_PICKUP, stone: STONE_PICKUP };
+const BURROW_LABEL = [
+  "barely dug out — just enough to turn around in",
+  "roomier now, walls properly packed",
+  "a real home underground",
+];
 
 // ---------------------------------------------------------- day / night --
 
@@ -147,6 +158,28 @@ function advanceMover(m, dt, speed) {
   return false;
 }
 
+// -------------------------------------------------------- burrow interior --
+
+// Door/nook/workbench/frontier are solid, interacted with from an adjacent
+// floor tile — same design language as every fixture in the village.
+function isBurrowWalkable(stage, x, y, furnitureList) {
+  const kind = tileKind(stage, x, y);
+  if (kind !== "floor") return false;
+  return !furnitureList.some((f) => f.x === x && f.y === y);
+}
+
+function findFreeFloorTile(stage, furnitureList) {
+  const { w, h } = interiorDims(stage);
+  for (let y = 1; y < h - 1; y++) {
+    for (let x = 1; x < w - 1; x++) {
+      if (tileKind(stage, x, y) !== "floor") continue;
+      if (furnitureList.some((f) => f.x === x && f.y === y)) continue;
+      return { x, y };
+    }
+  }
+  return null;
+}
+
 const JEFF_DATA = NPCS.find((n) => n.id === "jeff");
 
 export default function Centerville() {
@@ -186,13 +219,23 @@ export default function Centerville() {
 
   const dialogueRef = useRef(null);
   const sleepingRef = useRef(false);
-  const carriedRef = useRef({ seeds: 0, bedding: 0 });
-  const bankedRef = useRef({ seeds: 0, bedding: 0 });
+  const sceneRef = useRef("village");
+  const digStageRef = useRef(0);
+  const furnitureRef = useRef([]);
+  const furnitureGivenRef = useRef(new Set());
+  const craftMenuRef = useRef(false);
+  const carriedRef = useRef({ seeds: 0, bedding: 0, wood: 0, stone: 0 });
+  const storedRef = useRef({ seeds: 0, bedding: 0, wood: 0, stone: 0 });
+  const heartsRef = useRef(Object.fromEntries(NPCS.map((n) => [n.id, 0])));
   const nodesRef = useRef(new Map(RESOURCE_NODES.map((n) => [n.id, { ...n, active: true }])));
 
   const [day, setDay] = useState(1);
-  const [carried, setCarried] = useState({ seeds: 0, bedding: 0 });
-  const [banked, setBanked] = useState({ seeds: 0, bedding: 0 });
+  const [scene, setScene] = useState("village");
+  const [digStage, setDigStage] = useState(0);
+  const [furniture, setFurniture] = useState([]);
+  const [craftMenuOpen, setCraftMenuOpen] = useState(false);
+  const [carried, setCarried] = useState({ seeds: 0, bedding: 0, wood: 0, stone: 0 });
+  const [stored, setStored] = useState({ seeds: 0, bedding: 0, wood: 0, stone: 0 });
   const [hearts, setHearts] = useState(
     Object.fromEntries(NPCS.map((n) => [n.id, 0]))
   );
@@ -226,33 +269,29 @@ export default function Centerville() {
 
   const rest = useCallback(() => {
     const c = carriedRef.current;
-    const stageBefore = getBurrowStage(bankedRef.current);
     let msg;
-    if (c.seeds === 0 && c.bedding === 0) {
+    const parts = Object.entries(c)
+      .filter(([, v]) => v > 0)
+      .map(([k, v]) => `${v} ${k}`);
+    if (parts.length === 0) {
       msg = "Nothing to store today, but rest is rest.";
     } else {
-      const parts = [];
-      if (c.seeds > 0) parts.push(`${c.seeds} seed${c.seeds > 1 ? "s" : ""}`);
-      if (c.bedding > 0) parts.push(`${c.bedding} bedding`);
-      bankedRef.current = {
-        seeds: bankedRef.current.seeds + c.seeds,
-        bedding: bankedRef.current.bedding + c.bedding,
-      };
-      setBanked({ ...bankedRef.current });
-      const stageAfter = getBurrowStage(bankedRef.current);
-      msg = `Stored ${parts.join(" and ")}.`;
-      if (stageAfter > stageBefore) {
-        msg += ` Your burrow is now ${BURROW_LABEL[stageAfter]}.`;
-      }
+      const nextStored = { ...storedRef.current };
+      for (const [k, v] of Object.entries(c)) nextStored[k] += v;
+      storedRef.current = nextStored;
+      setStored(nextStored);
+      msg = `Stored ${parts.join(", ")}.`;
     }
-    carriedRef.current = { seeds: 0, bedding: 0 };
-    setCarried({ seeds: 0, bedding: 0 });
+    carriedRef.current = { seeds: 0, bedding: 0, wood: 0, stone: 0 };
+    setCarried({ seeds: 0, bedding: 0, wood: 0, stone: 0 });
 
     sleepingRef.current = true;
     setSleeping(true);
     setTimeout(() => {
       for (const node of nodesRef.current.values()) node.active = true;
       setDay((d) => d + 1);
+      sceneRef.current = "village";
+      setScene("village");
       const p = player.current;
       p.x = PLAYER_START.x;
       p.y = PLAYER_START.y;
@@ -260,6 +299,7 @@ export default function Centerville() {
       p.targetY = PLAYER_START.y;
       p.px = PLAYER_START.x * TILE_SIZE;
       p.py = PLAYER_START.y * TILE_SIZE;
+      p.dir = "down";
       p.trail = [];
       dayTimeRef.current = MORNING_RESET;
       const j = jeff.current;
@@ -277,20 +317,126 @@ export default function Centerville() {
     }, 900);
   }, [showToast]);
 
+  const enterBurrow = useCallback(() => {
+    sceneRef.current = "burrow";
+    setScene("burrow");
+    const stage = digStageRef.current;
+    const { door } = fixtures(stage);
+    const p = player.current;
+    p.x = door.x;
+    p.y = door.y - 1;
+    p.targetX = p.x;
+    p.targetY = p.y;
+    p.px = p.x * TILE_SIZE;
+    p.py = p.y * TILE_SIZE;
+    p.dir = "down";
+    p.moving = false;
+  }, []);
+
+  const leaveBurrow = useCallback(() => {
+    sceneRef.current = "village";
+    setScene("village");
+    const p = player.current;
+    p.x = HOME.x;
+    p.y = HOME.y + 1;
+    p.targetX = p.x;
+    p.targetY = p.y;
+    p.px = p.x * TILE_SIZE;
+    p.py = p.y * TILE_SIZE;
+    p.dir = "up";
+    p.moving = false;
+  }, []);
+
+  const attemptDig = useCallback(() => {
+    const stage = digStageRef.current;
+    if (stage >= MAX_DIG_STAGE) {
+      showToast("There's nowhere further to dig.");
+      return;
+    }
+    const cost = DIG_COSTS[stage];
+    const s = storedRef.current;
+    const canAfford = Object.entries(cost).every(([k, v]) => (s[k] || 0) >= v);
+    if (!canAfford) {
+      const need = Object.entries(cost)
+        .map(([k, v]) => `${v} ${k}`)
+        .join(", ");
+      showToast(`Need ${need} to dig further.`);
+      return;
+    }
+    const nextStored = { ...s };
+    for (const [k, v] of Object.entries(cost)) nextStored[k] -= v;
+    storedRef.current = nextStored;
+    setStored(nextStored);
+    digStageRef.current = stage + 1;
+    setDigStage(stage + 1);
+    showToast(`You dig the room deeper — ${BURROW_LABEL[stage + 1]}.`);
+  }, [showToast]);
+
+  const craftItem = useCallback(
+    (recipeId) => {
+      const recipe = RECIPES.find((r) => r.id === recipeId);
+      if (!recipe) return;
+      const s = storedRef.current;
+      const canAfford = Object.entries(recipe.cost).every(([k, v]) => (s[k] || 0) >= v);
+      if (!canAfford) {
+        showToast("Not enough materials for that.");
+        return;
+      }
+      const slot = findFreeFloorTile(digStageRef.current, furnitureRef.current);
+      if (!slot) {
+        showToast("No room left — dig the burrow deeper first.");
+        return;
+      }
+      const nextStored = { ...s };
+      for (const [k, v] of Object.entries(recipe.cost)) nextStored[k] -= v;
+      storedRef.current = nextStored;
+      setStored(nextStored);
+      const nextFurniture = [...furnitureRef.current, { id: recipe.id, x: slot.x, y: slot.y }];
+      furnitureRef.current = nextFurniture;
+      setFurniture(nextFurniture);
+      showToast(`Crafted ${FURNITURE_LABEL[recipe.id]}.`);
+    },
+    [showToast]
+  );
+
   const openDialogue = useCallback((npc) => {
     const t = (dayTimeRef.current / DAY_DURATION) % 1;
     const night = t >= NIGHT_START;
-    setHearts((prev) => {
-      const next = Math.min(MAX_FRIENDSHIP, prev[npc.id] + 10);
-      const level = Math.min(npc.lines.length - 1, Math.floor(next / 20));
-      const entry =
-        night && npc.nightLine
-          ? { id: npc.id, name: npc.name, lines: [npc.nightLine], index: 0 }
-          : { id: npc.id, name: npc.name, lines: npc.lines, index: level };
-      dialogueRef.current = entry;
-      setDialogue(entry);
-      return { ...prev, [npc.id]: next };
-    });
+    // Side effects (mutating refs, other setState calls) must not live
+    // inside a setState updater — StrictMode double-invokes updaters in
+    // development to catch exactly that, and the second call would see
+    // furnitureGivenRef already mutated by the first and silently skip
+    // the gift. heartsRef is the source of truth; setHearts just mirrors it.
+    const next = Math.min(MAX_FRIENDSHIP, heartsRef.current[npc.id] + 10);
+    heartsRef.current = { ...heartsRef.current, [npc.id]: next };
+    setHearts(heartsRef.current);
+
+    // The first time you talk to a maxed-friendship NPC, they give you a
+    // signature piece of furniture instead of ordinary dialogue — but
+    // only if there's actually room for it; otherwise this quietly
+    // retries on the next conversation.
+    if (next >= MAX_FRIENDSHIP && npc.furnitureGiftLine && !furnitureGivenRef.current.has(npc.id)) {
+      const giftId = NPC_FURNITURE_GIFT[npc.id];
+      const slot = giftId ? findFreeFloorTile(digStageRef.current, furnitureRef.current) : null;
+      if (slot) {
+        furnitureGivenRef.current.add(npc.id);
+        const nextFurniture = [...furnitureRef.current, { id: giftId, x: slot.x, y: slot.y }];
+        furnitureRef.current = nextFurniture;
+        setFurniture(nextFurniture);
+        const entry = { id: npc.id, name: npc.name, lines: [npc.furnitureGiftLine], index: 0 };
+        dialogueRef.current = entry;
+        setDialogue(entry);
+        return;
+      }
+    }
+
+    const level = Math.min(npc.lines.length - 1, Math.floor(next / 20));
+    const entry =
+      night && npc.nightLine
+        ? { id: npc.id, name: npc.name, lines: [npc.nightLine], index: 0 }
+        : { id: npc.id, name: npc.name, lines: npc.lines, index: level };
+    dialogueRef.current = entry;
+    setDialogue(entry);
   }, []);
 
   const gift = useCallback(
@@ -301,7 +447,11 @@ export default function Centerville() {
       if (carriedRef.current[npc.prefers] > 0) {
         carriedRef.current = { ...carriedRef.current, [npc.prefers]: carriedRef.current[npc.prefers] - 1 };
         setCarried({ ...carriedRef.current });
-        setHearts((prev) => ({ ...prev, [npc.id]: Math.min(MAX_FRIENDSHIP, prev[npc.id] + 25) }));
+        heartsRef.current = {
+          ...heartsRef.current,
+          [npc.id]: Math.min(MAX_FRIENDSHIP, heartsRef.current[npc.id] + 25),
+        };
+        setHearts(heartsRef.current);
         showToast(npc.giftLine);
         if (npc.id === "jeff" && jeff.current.mode === "hungry") {
           jeff.current.mode = "following";
@@ -314,7 +464,11 @@ export default function Centerville() {
       if (fallbackType) {
         carriedRef.current = { ...carriedRef.current, [fallbackType]: carriedRef.current[fallbackType] - 1 };
         setCarried({ ...carriedRef.current });
-        setHearts((prev) => ({ ...prev, [npc.id]: Math.min(MAX_FRIENDSHIP, prev[npc.id] + 5) }));
+        heartsRef.current = {
+          ...heartsRef.current,
+          [npc.id]: Math.min(MAX_FRIENDSHIP, heartsRef.current[npc.id] + 5),
+        };
+        setHearts(heartsRef.current);
         showToast(npc.mismatchLine);
         return;
       }
@@ -346,10 +500,29 @@ export default function Centerville() {
       return;
     }
 
+    if (craftMenuRef.current) return;
+
     const p = player.current;
     const [ox, oy] = DIR_OFFSET[p.dir];
     const fx = p.x + ox;
     const fy = p.y + oy;
+
+    if (sceneRef.current === "burrow") {
+      const kind = tileKind(digStageRef.current, fx, fy);
+      if (kind === "door") {
+        leaveBurrow();
+      } else if (kind === "nook") {
+        rest();
+      } else if (kind === "workbench") {
+        craftMenuRef.current = true;
+        setCraftMenuOpen(true);
+      } else if (kind === "frontier") {
+        attemptDig();
+      } else {
+        showToast("Nothing here.");
+      }
+      return;
+    }
 
     const npc = findNpcAt(fx, fy);
     if (npc) {
@@ -358,16 +531,16 @@ export default function Centerville() {
     }
 
     if (fx === HOME.x && fy === HOME.y) {
-      rest();
+      enterBurrow();
       return;
     }
 
     const flavor = FLAVOR_TEXT[tileAt(fx, fy)];
     showToast(flavor || "Nothing here.");
-  }, [findNpcAt, openDialogue, rest, showToast]);
+  }, [attemptDig, enterBurrow, findNpcAt, leaveBurrow, openDialogue, rest, showToast]);
 
   const giftFacing = useCallback(() => {
-    if (dialogueRef.current) return;
+    if (dialogueRef.current || sceneRef.current === "burrow") return;
     const p = player.current;
     const [ox, oy] = DIR_OFFSET[p.dir];
     const fx = p.x + ox;
@@ -384,7 +557,7 @@ export default function Centerville() {
   const tryStep = useCallback(
     (dir) => {
       const p = player.current;
-      if (dialogueRef.current || sleepingRef.current) return;
+      if (dialogueRef.current || sleepingRef.current || craftMenuRef.current) return;
       if (p.moving) {
         p.queuedDir = dir;
         return;
@@ -393,6 +566,16 @@ export default function Centerville() {
       const [ox, oy] = DIR_OFFSET[dir];
       const nx = p.x + ox;
       const ny = p.y + oy;
+
+      if (sceneRef.current === "burrow") {
+        if (isBurrowWalkable(digStageRef.current, nx, ny, furnitureRef.current)) {
+          p.targetX = nx;
+          p.targetY = ny;
+          p.moving = true;
+        }
+        return;
+      }
+
       const blockedByNpc = Boolean(findNpcAt(nx, ny));
       if (isWalkable(nx, ny) && !blockedByNpc) {
         p.trail.push({ x: p.x, y: p.y });
@@ -443,18 +626,30 @@ export default function Centerville() {
 
     function computeHint() {
       if (dialogueRef.current) return "Tap Continue to keep talking";
+      if (craftMenuRef.current) return "Pick something to craft, or Close";
       const p = player.current;
       const [ox, oy] = DIR_OFFSET[p.dir];
       const fx = p.x + ox;
       const fy = p.y + oy;
+
+      if (sceneRef.current === "burrow") {
+        const kind = tileKind(digStageRef.current, fx, fy);
+        if (kind === "door") return "Leave the burrow";
+        if (kind === "nook") return "Rest here to store today's gathering";
+        if (kind === "workbench") return "Open the workbench to craft furniture";
+        if (kind === "frontier") return "Dig here to make more room";
+        return "Move around your burrow";
+      }
+
       const npc = findNpcAt(fx, fy);
       if (npc) return `Talk to ${npc.name} · Gift to give something`;
-      if (fx === HOME.x && fy === HOME.y) return "Rest here to store today's gathering";
+      if (fx === HOME.x && fy === HOME.y) return "Go inside your burrow";
       if (FLAVOR_TEXT[tileAt(fx, fy)]) return "Look closer";
       return "Move around — walk over seeds & bedding to collect them";
     }
 
     function collectAt(x, y) {
+      if (sceneRef.current !== "village") return;
       for (const node of nodesRef.current.values()) {
         if (node.active && node.x === x && node.y === y) {
           node.active = false;
@@ -516,16 +711,19 @@ export default function Centerville() {
         }
       }
 
-      // Jeff retraces the player's steps one tile at a time while following.
-      if (j.mode === "following" && !j.moving && p.trail.length > 0) {
-        const next = p.trail.shift();
-        j.targetX = next.x;
-        j.targetY = next.y;
-        j.moving = true;
+      // Jeff waits outside while you're in your burrow — he retraces the
+      // player's steps one tile at a time while following in the village.
+      if (sceneRef.current === "village") {
+        if (j.mode === "following" && !j.moving && p.trail.length > 0) {
+          const next = p.trail.shift();
+          j.targetX = next.x;
+          j.targetY = next.y;
+          j.moving = true;
+        }
+        if (j.moving) j.walkPhase += dt * 10;
+        else j.walkPhase = 0;
+        advanceMover(j, dt, MOVE_SPEED);
       }
-      if (j.moving) j.walkPhase += dt * 10;
-      else j.walkPhase = 0;
-      advanceMover(j, dt, MOVE_SPEED);
 
       draw(ctx);
 
@@ -545,23 +743,26 @@ export default function Centerville() {
 
     function draw(ctx) {
       ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+      if (sceneRef.current === "burrow") drawBurrow(ctx);
+      else drawVillage(ctx);
+    }
 
+    function drawVillage(ctx) {
       for (let y = 0; y < GRID_H; y++) {
         for (let x = 0; x < GRID_W; x++) {
           const t = tileAt(x, y);
-          if (t === "H") continue; // burrow drawn from BURROW_STAGES below
+          if (t === "H") continue; // burrow entrance drawn from BURROW_STAGES below
           const variants = TILE_SPRITES[t] || TILE_SPRITES.G;
           const sprite = variants[(x + y) % variants.length];
           drawSprite(ctx, sprite, x * TILE_SIZE, y * TILE_SIZE, CELL);
         }
       }
 
-      const stage = getBurrowStage(bankedRef.current);
-      drawSprite(ctx, BURROW_STAGES[stage], HOME.x * TILE_SIZE, HOME.y * TILE_SIZE, CELL);
+      drawSprite(ctx, BURROW_STAGES[digStageRef.current], HOME.x * TILE_SIZE, HOME.y * TILE_SIZE, CELL);
 
       for (const node of nodesRef.current.values()) {
         if (!node.active) continue;
-        const sprite = node.type === "seeds" ? SEED_PICKUP : BEDDING_PICKUP;
+        const sprite = RESOURCE_SPRITE[node.type];
         drawSprite(ctx, sprite, node.x * TILE_SIZE, node.y * TILE_SIZE, CELL);
       }
 
@@ -581,6 +782,41 @@ export default function Centerville() {
         ctx.fillStyle = `rgba(${tint.r | 0},${tint.g | 0},${tint.b | 0},${tint.a})`;
         ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
       }
+    }
+
+    function drawBurrow(ctx) {
+      const stage = digStageRef.current;
+      const { w, h } = interiorDims(stage);
+      const offsetX = Math.floor((GRID_W - w) / 2) * TILE_SIZE;
+      const offsetY = Math.floor((GRID_H - h) / 2) * TILE_SIZE;
+
+      ctx.fillStyle = "#140f0a";
+      ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          const kind = tileKind(stage, x, y);
+          const px = offsetX + x * TILE_SIZE;
+          const py = offsetY + y * TILE_SIZE;
+          if (kind === "wall") {
+            drawSprite(ctx, DUG_WALL, px, py, CELL);
+          } else if (kind === "frontier") {
+            drawSprite(ctx, DIG_FRONTIER, px, py, CELL);
+          } else {
+            drawSprite(ctx, FLOOR, px, py, CELL);
+            if (kind === "door") drawSprite(ctx, INTERIOR_DOOR, px, py, CELL);
+            else if (kind === "nook") drawSprite(ctx, SLEEPING_NOOK, px, py, CELL);
+            else if (kind === "workbench") drawSprite(ctx, WORKBENCH, px, py, CELL);
+          }
+        }
+      }
+
+      for (const f of furnitureRef.current) {
+        const sprite = FURNITURE[f.id];
+        if (sprite) drawSprite(ctx, sprite, offsetX + f.x * TILE_SIZE, offsetY + f.y * TILE_SIZE, CELL);
+      }
+
+      drawPlayer(ctx, offsetX, offsetY);
     }
 
     function drawNpc(ctx, npc) {
@@ -604,11 +840,11 @@ export default function Centerville() {
       }
     }
 
-    function drawPlayer(ctx) {
+    function drawPlayer(ctx, offsetX = 0, offsetY = 0) {
       const p = player.current;
       const bob = p.moving ? Math.round(Math.sin(p.walkPhase) * 2) : 0;
-      const x = p.px + 4;
-      const y = p.py - 8 + bob;
+      const x = offsetX + p.px + 4;
+      const y = offsetY + p.py - 8 + bob;
       if (p.dir === "up") drawSprite(ctx, PLAYER_SPRITES.up, x, y, CHAR_CELL);
       else if (p.dir === "down") drawSprite(ctx, PLAYER_SPRITES.down, x, y, CHAR_CELL);
       else if (p.dir === "left") drawSprite(ctx, PLAYER_SPRITES.side, x, y, CHAR_CELL, true);
@@ -623,8 +859,6 @@ export default function Centerville() {
     const level = Math.min(5, Math.floor(value / 20));
     return "♥".repeat(level) + "♡".repeat(5 - level);
   };
-
-  const stage = getBurrowStage(banked);
 
   const holdDir = useCallback(
     (dir) => (e) => {
@@ -649,6 +883,39 @@ export default function Centerville() {
               <div className="cv-dialogue-name">{dialogue.name}</div>
               <div className="cv-dialogue-text">{dialogue.lines[dialogue.index]}</div>
               <div className="cv-dialogue-hint">TAP CONTINUE</div>
+            </div>
+          )}
+          {craftMenuOpen && (
+            <div className="cv-craft-menu">
+              <div className="cv-craft-title">Workbench</div>
+              {RECIPES.map((r) => {
+                const affordable = Object.entries(r.cost).every(([k, v]) => (stored[k] || 0) >= v);
+                const costText = Object.entries(r.cost)
+                  .map(([k, v]) => `${v} ${k}`)
+                  .join(", ");
+                return (
+                  <button
+                    key={r.id}
+                    type="button"
+                    className="cv-craft-item"
+                    disabled={!affordable}
+                    onClick={() => craftItem(r.id)}
+                  >
+                    <span>{r.label}</span>
+                    <span className="cv-craft-cost">{costText}</span>
+                  </button>
+                );
+              })}
+              <button
+                type="button"
+                className="cv-craft-close"
+                onClick={() => {
+                  craftMenuRef.current = false;
+                  setCraftMenuOpen(false);
+                }}
+              >
+                Close
+              </button>
             </div>
           )}
           <div className="cv-hint">{hint}</div>
@@ -706,7 +973,7 @@ export default function Centerville() {
               type="button"
               className="cv-action-btn"
               onClick={() => giftFacing()}
-              disabled={Boolean(dialogue)}
+              disabled={Boolean(dialogue) || scene === "burrow" || craftMenuOpen}
             >
               Gift
             </button>
@@ -714,6 +981,7 @@ export default function Centerville() {
               type="button"
               className="cv-action-btn cv-action-btn-primary"
               onClick={() => interact()}
+              disabled={craftMenuOpen}
             >
               {dialogue ? "Continue" : "Talk / Rest"}
             </button>
@@ -730,17 +998,23 @@ export default function Centerville() {
         <div className="cv-stat-block">
           <span>Carrying</span>
           <div className="cv-carry-row">
-            <span>🌾 Seeds: {carried.seeds}</span>
-            <span>🪶 Bedding: {carried.bedding}</span>
+            {Object.entries(carried).map(([k, v]) => (
+              <span key={k}>
+                {RESOURCE_ICON[k]} {k[0].toUpperCase() + k.slice(1)}: {v}
+              </span>
+            ))}
           </div>
         </div>
 
         <div className="cv-stat-block">
           <span>Your Burrow</span>
-          <div>{BURROW_LABEL[stage]}</div>
+          <div>{BURROW_LABEL[digStage]}</div>
           <div className="cv-burrow-progress">
-            stored: {banked.seeds} seeds, {banked.bedding} bedding
+            stored: {Object.entries(stored).map(([k, v]) => `${v} ${k}`).join(", ")}
           </div>
+          {furniture.length > 0 && (
+            <div className="cv-burrow-progress">{furniture.length} piece{furniture.length > 1 ? "s" : ""} of furniture</div>
+          )}
         </div>
 
         <div className="cv-stat-block">

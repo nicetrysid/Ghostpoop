@@ -87,6 +87,7 @@ export const NPCS = [
       "Weg: You're still here. That means something, coming from you.",
     ],
     nightLine: "Weg: Late to be walking. Not my business why.",
+    furnitureGiftLine: "Weg sets something down without a word. A plain stool. \"Sit properly.\"",
   },
   {
     id: "skitters",
@@ -106,6 +107,7 @@ export const NPCS = [
       "Skitters: Don't tell Weg I said this, but I'm glad you're around.",
     ],
     nightLine: "Skitters: Quiet up here at night. I like it. Don't tell anyone.",
+    furnitureGiftLine: "Skitters produces a shelf from somewhere. \"Everyone needs a place to watch from.\"",
   },
   {
     id: "dennis",
@@ -125,6 +127,7 @@ export const NPCS = [
       "Dennis: You keep coming back. I don't ask why. I just like that you do.",
     ],
     nightLine: "Dennis: Tree's quiet at night. Almost forgivable.",
+    furnitureGiftLine: "Dennis beams. \"A table! For when the kids visit you too.\"",
   },
   {
     id: "jeff",
@@ -144,6 +147,7 @@ export const NPCS = [
       "Jeff: You're fun to follow around. Don't ask me why. I just know things.",
     ],
     nightLine: "Jeff: I should be asleep. I'm extremely asleep right now. Watch.",
+    furnitureGiftLine: "Jeff proudly presents a hearth. \"I don't know how I built this. I just did.\"",
   },
   {
     id: "claudius",
@@ -163,6 +167,7 @@ export const NPCS = [
       "Claudius: Come fall, there's a walk I make. You'd be welcome on it.",
     ],
     nightLine: "Claudius: Old habit — I still case a room even when there's nothing to take.",
+    furnitureGiftLine: "Claudius leaves a rug by your door, no note attached. You know who it's from.",
   },
   {
     id: "rachel",
@@ -182,6 +187,7 @@ export const NPCS = [
       "Rachel: You built that well. I mean it — I checked.",
     ],
     nightLine: "Rachel: Watering's better at night. Less gets lost to the sun.",
+    furnitureGiftLine: "Rachel hands you a potted sprout. \"Water it. Or don't. It's stubborn.\"",
   },
   {
     id: "pepper",
@@ -201,6 +207,7 @@ export const NPCS = [
       "Pepper: Don't tell me it's fine. Tell me it's done.",
     ],
     nightLine: "Pepper: Still working. The list doesn't clock out.",
+    furnitureGiftLine: "Pepper delivers a shelf, fully itemized. \"For organization. You needed this.\"",
   },
   {
     id: "churt",
@@ -220,6 +227,7 @@ export const NPCS = [
       "Churt: Warmest mouse in the canyon, underneath it all. Not that I'd say that about myself.",
     ],
     nightLine: "Churt: Started a project by moonlight once. Still not finished. You'll never guess which one.",
+    furnitureGiftLine: "Churt beams. \"I MADE this. Well — finished it. A stool. For you.\"",
   },
   {
     id: "bart",
@@ -239,6 +247,7 @@ export const NPCS = [
       "Bart: Jeff's alright. Bit much. Alright, though.",
     ],
     nightLine: "Bart: Water's stiller at night. So am I.",
+    furnitureGiftLine: "Bart pushes a hearth toward you, unhurried. \"Every burrow needs warmth.\"",
   },
 ];
 
@@ -249,4 +258,8 @@ export const RESOURCE_NODES = [
   { id: "bedding-creek", type: "bedding", x: 5, y: 4 },
   { id: "bedding-meadow", type: "bedding", x: 6, y: 11 },
   { id: "bedding-south", type: "bedding", x: 9, y: 12 },
+  { id: "wood-east", type: "wood", x: 15, y: 4 },
+  { id: "wood-south", type: "wood", x: 10, y: 12 },
+  { id: "stone-north", type: "stone", x: 14, y: 2 },
+  { id: "stone-west", type: "stone", x: 6, y: 2 },
 ];
