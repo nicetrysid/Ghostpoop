@@ -1,3 +1,7 @@
+* {
+  box-sizing: border-box;
+}
+
 .cv-game {
   min-height: 100vh;
   display: flex;
@@ -13,6 +17,9 @@
 
 .cv-stage {
   position: relative;
+  min-width: 0;
+  max-width: 100%;
+  width: 1152px;
   border: 4px solid #6b4530;
   border-radius: 4px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
@@ -20,8 +27,8 @@
 
 .cv-canvas {
   display: block;
-  width: 1152px;
-  height: 896px;
+  width: 100%;
+  height: auto;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
   background: #3a4a2f;
@@ -97,8 +104,99 @@
   color: #b8ac8a;
 }
 
+.cv-touch-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px;
+  background: #1c140d;
+  border-top: 3px solid #6b4530;
+}
+
+.cv-dpad {
+  display: grid;
+  grid-template-columns: repeat(3, 46px);
+  grid-template-rows: repeat(3, 46px);
+  grid-template-areas:
+    ".    up    ."
+    "left .     right"
+    ".    down  .";
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.cv-dpad-up {
+  grid-area: up;
+}
+.cv-dpad-down {
+  grid-area: down;
+}
+.cv-dpad-left {
+  grid-area: left;
+}
+.cv-dpad-right {
+  grid-area: right;
+}
+
+.cv-dpad-btn {
+  width: 46px;
+  height: 46px;
+  background: #3a2c1c;
+  border: 2px solid #6b4530;
+  border-radius: 6px;
+  color: #eee6d3;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.cv-dpad-btn:active {
+  background: #54402a;
+}
+
+.cv-action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.cv-action-btn {
+  padding: 12px 20px;
+  background: #3a2c1c;
+  border: 2px solid #6b4530;
+  border-radius: 6px;
+  color: #eee6d3;
+  font-family: inherit;
+  font-size: 13px;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.cv-action-btn:active {
+  background: #54402a;
+}
+
+.cv-action-btn-primary {
+  background: #5a4128;
+  border-color: #d9a441;
+  color: #ffe9a8;
+  font-weight: bold;
+}
+
 .cv-hud {
   width: 270px;
+  max-width: 100%;
   background: #2f2419;
   border: 3px solid #6b4530;
   border-radius: 6px;

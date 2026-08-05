@@ -45,6 +45,12 @@ const MOVE_KEYS = {
   w: "up",
   a: "left",
   d: "right",
+  // synthetic entries so on-screen touch buttons reuse the same
+  // tap-queues / held-key-continues movement logic as the keyboard
+  "touch-down": "down",
+  "touch-up": "up",
+  "touch-left": "left",
+  "touch-right": "right",
 };
 
 const FLAVOR_TEXT = {
@@ -417,6 +423,20 @@ export default function Centerville() {
 
   const stage = getBurrowStage(banked);
 
+  const holdDir = useCallback(
+    (dir) => (e) => {
+      e.preventDefault();
+      const key = `touch-${dir}`;
+      keysRef.current.add(key);
+      tryStep(dir);
+    },
+    [tryStep]
+  );
+  const releaseDir = useCallback(
+    (dir) => () => keysRef.current.delete(`touch-${dir}`),
+    []
+  );
+
   return (
     <div className="cv-game">
       <div className="cv-stage">
@@ -431,6 +451,63 @@ export default function Centerville() {
           </div>
         )}
         <div className="cv-hint">{hint}</div>
+
+        <div className="cv-touch-controls" aria-hidden="false">
+          <div className="cv-dpad">
+            <button
+              type="button"
+              className="cv-dpad-btn cv-dpad-up"
+              onPointerDown={holdDir("up")}
+              onPointerUp={releaseDir("up")}
+              onPointerLeave={releaseDir("up")}
+              onPointerCancel={releaseDir("up")}
+              aria-label="Move up"
+            >
+              ▲
+            </button>
+            <button
+              type="button"
+              className="cv-dpad-btn cv-dpad-left"
+              onPointerDown={holdDir("left")}
+              onPointerUp={releaseDir("left")}
+              onPointerLeave={releaseDir("left")}
+              onPointerCancel={releaseDir("left")}
+              aria-label="Move left"
+            >
+              ◀
+            </button>
+            <button
+              type="button"
+              className="cv-dpad-btn cv-dpad-right"
+              onPointerDown={holdDir("right")}
+              onPointerUp={releaseDir("right")}
+              onPointerLeave={releaseDir("right")}
+              onPointerCancel={releaseDir("right")}
+              aria-label="Move right"
+            >
+              ▶
+            </button>
+            <button
+              type="button"
+              className="cv-dpad-btn cv-dpad-down"
+              onPointerDown={holdDir("down")}
+              onPointerUp={releaseDir("down")}
+              onPointerLeave={releaseDir("down")}
+              onPointerCancel={releaseDir("down")}
+              aria-label="Move down"
+            >
+              ▼
+            </button>
+          </div>
+          <div className="cv-action-buttons">
+            <button type="button" className="cv-action-btn" onClick={() => giftFacing()}>
+              Gift
+            </button>
+            <button type="button" className="cv-action-btn cv-action-btn-primary" onClick={() => interact()}>
+              Talk / Rest
+            </button>
+          </div>
+        </div>
       </div>
 
       <div className="cv-hud">
