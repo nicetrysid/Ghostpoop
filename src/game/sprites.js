@@ -132,6 +132,20 @@ export const HOUSEBOAT = {
   ],
 };
 
+export const GARDEN = {
+  palette: { 1: "#6b4a2f", 2: "#4a7c3f", 3: "#d9a441" },
+  rows: [
+    "11111111",
+    "12121213",
+    "11111111",
+    "21121112",
+    "11111111",
+    "13121212",
+    "11111111",
+    "21212121",
+  ],
+};
+
 // player burrow — three stages, drawn instead of MOUND at the home tile
 export const BURROW_STAGES = [
   {
@@ -218,6 +232,7 @@ export const TILE_SPRITES = {
   M: [MARKET],
   Y: [HOUSEBOAT],
   T: [TREE],
+  A: [GARDEN],
 };
 
 // -------------------------------------------------------------- characters --
@@ -278,17 +293,63 @@ export function makeMouseSprites(fur, shadow) {
   };
 }
 
+// A toad reads differently from a mouse: wider eyes on top, no ears, a
+// rounder squat body with a lighter belly patch.
+function toadRows() {
+  return [
+    "........",
+    ".o....o.",
+    ".oe..eo.",
+    "oaaaaaao",
+    "oaaaaaao",
+    "oabbbbao",
+    "oabbbbao",
+    ".oaaaao.",
+    "..oaao..",
+    "........",
+  ];
+}
+
+function toadPalette(body, belly) {
+  return {
+    o: "#2f3d28",
+    a: body,
+    b: belly,
+    e: "#1b1b1b",
+  };
+}
+
+export function makeToadSprites(body, belly) {
+  const palette = toadPalette(body, belly);
+  const rows = toadRows();
+  return {
+    down: { palette, rows },
+    up: { palette, rows },
+    side: { palette, rows },
+  };
+}
+
 export const PLAYER_SPRITES = makeMouseSprites("#d8d2c6", "#b0a99c");
 export const WEG_SPRITES = makeMouseSprites("#8a8478", "#69645a");
 export const SKITTERS_SPRITES = makeMouseSprites("#c97b4a", "#a45f37");
 export const DENNIS_SPRITES = makeMouseSprites("#8a7048", "#6b5636");
 export const JEFF_SPRITES = makeMouseSprites("#e8c66b", "#c9a94a");
+export const CLAUDIUS_SPRITES = makeMouseSprites("#7a8a99", "#5c6b78");
+export const RACHEL_SPRITES = makeMouseSprites("#9a8a5a", "#7a6c42");
+export const PEPPER_SPRITES = makeMouseSprites("#c9c9c9", "#a3a3a3");
+export const CHURT_SPRITES = makeMouseSprites("#c9a23a", "#a37f28");
+export const BART_SPRITES = makeToadSprites("#5a7a4a", "#c9c9a0");
 
 export const NPC_SPRITE_SETS = {
   weg: WEG_SPRITES,
   skitters: SKITTERS_SPRITES,
   dennis: DENNIS_SPRITES,
   jeff: JEFF_SPRITES,
+  claudius: CLAUDIUS_SPRITES,
+  rachel: RACHEL_SPRITES,
+  pepper: PEPPER_SPRITES,
+  churt: CHURT_SPRITES,
+  bart: BART_SPRITES,
 };
 
 export const NPC_SCALE = {
@@ -296,4 +357,15 @@ export const NPC_SCALE = {
   skitters: 1,
   dennis: 1,
   jeff: 0.8, // Jeff's a kit — smaller
+  claudius: 1,
+  rachel: 1,
+  pepper: 1,
+  churt: 1,
+  bart: 1.05, // an old toad takes up a little more room
+};
+
+// Small distress mark drawn above Jeff when his hunger hits.
+export const EXCLAIM = {
+  palette: { r: "#e8503a" },
+  rows: [".r.", ".r.", ".r.", "...", ".r."],
 };
