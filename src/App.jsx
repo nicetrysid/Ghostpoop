@@ -1,5 +1,5 @@
-import TheLastWords from "./TheLastWords";
+import DeerMiceSim from "./DeerMiceSim";
 
 export default function App() {
-  return <TheLastWords />;
+  return <DeerMiceSim />;
 }
