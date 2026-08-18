@@ -1,5 +1,5 @@
-import TheLastWords from "./TheLastWords";
+import Centerville from "./Centerville";
 
 export default function App() {
-  return <TheLastWords />;
+  return <Centerville />;
 }
