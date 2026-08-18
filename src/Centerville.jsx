@@ -576,7 +576,13 @@ export default function Centerville() {
         return;
       }
 
-      const blockedByNpc = Boolean(findNpcAt(nx, ny));
+      // A following/hungry Jeff trails wherever the player has been and can
+      // end up anywhere, including a tight spot — he must never be able to
+      // trap the player against terrain or another NPC. He only blocks
+      // movement while idle at his usual landmark spot, like any other NPC.
+      const blockingNpc = findNpcAt(nx, ny);
+      const blockedByNpc =
+        Boolean(blockingNpc) && !(blockingNpc.id === "jeff" && jeff.current.mode !== "idle");
       if (isWalkable(nx, ny) && !blockedByNpc) {
         p.trail.push({ x: p.x, y: p.y });
         if (p.trail.length > 10) p.trail.shift();

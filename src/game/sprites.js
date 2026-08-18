@@ -1,10 +1,14 @@
 // All pixel art in this game is authored here as small character grids.
 // '.' = transparent. Every other character is a palette key -> CSS color.
+//
+// Palette direction: warm, saturated SNES-Harvest-Moon pastoral colors
+// (vivid grass, cheerful turquoise water, terracotta cliffs, rich wood)
+// with Animal-Crossing-style rounder, blushed character faces.
 
 // ---------------------------------------------------------------- ground --
 
 export const GRASS_A = {
-  palette: { 1: "#4a7c3f", 2: "#5a934b" },
+  palette: { 1: "#63a848", 2: "#78c95c" },
   rows: [
     "11211121",
     "21121211",
@@ -18,13 +22,28 @@ export const GRASS_A = {
 };
 
 export const GRASS_B = {
-  palette: { 1: "#4a7c3f", 2: "#5a934b" },
+  palette: { 1: "#63a848", 2: "#78c95c" },
   rows: [
     "21121211",
     "11211121",
     "21121211",
     "11211121",
     "21121211",
+    "11211121",
+    "21121211",
+    "11211121",
+  ],
+};
+
+// A little meadow charm — small flower flecks sprinkled sparingly.
+export const GRASS_C = {
+  palette: { 1: "#63a848", 2: "#78c95c", f: "#f7c9dc", y: "#f7e07a" },
+  rows: [
+    "21121211",
+    "11f11121",
+    "21121211",
+    "11211211",
+    "2112y211",
     "11211121",
     "21121211",
     "11211121",
@@ -32,7 +51,7 @@ export const GRASS_B = {
 };
 
 export const WATER = {
-  palette: { 1: "#3a6ea5", 2: "#4a7fb5", 3: "#5a90c5" },
+  palette: { 1: "#3aa0c9", 2: "#4fc0e0", 3: "#72d6ef" },
   rows: [
     "11122111",
     "11222211",
@@ -45,9 +64,9 @@ export const WATER = {
   ],
 };
 
-// canyon rim — red sandstone
+// canyon rim — warm terracotta, more garden-wall than harsh cliff
 export const BOULDER = {
-  palette: { 1: "#9c5a3f", 2: "#864a32", 3: "#b06f4f" },
+  palette: { 1: "#c97a52", 2: "#b0603a", 3: "#dd9468" },
   rows: [
     "11122311",
     "12233211",
@@ -63,7 +82,7 @@ export const BOULDER = {
 // -------------------------------------------------------------- landmarks --
 
 export const BUSH = {
-  palette: { l: "#3f7a3a", d: "#2f5e2c", b: "#1f3d1c" },
+  palette: { l: "#4a9143", d: "#367530", b: "#22421f" },
   rows: [
     "..dlll..",
     ".lllllll",
@@ -77,7 +96,7 @@ export const BUSH = {
 };
 
 export const TREE = {
-  palette: { l: "#2f6b2a", d: "#255420", t: "#6b4a2f" },
+  palette: { l: "#3a7f34", d: "#2c6428", t: "#7a5738" },
   rows: [
     ".dllll..",
     "dllllll.",
@@ -91,7 +110,7 @@ export const TREE = {
 };
 
 export const MOUND = {
-  palette: { 1: "#8a6a45", 2: "#6b4a2f", 3: "#3d2a1a" },
+  palette: { 1: "#9c7449", 2: "#7a5738", 3: "#4a3524" },
   rows: [
     "..1111..",
     ".111111.",
@@ -105,7 +124,7 @@ export const MOUND = {
 };
 
 export const MARKET = {
-  palette: { a: "#5a90c5", w: "#8a6a45", t: "#c9b28a" },
+  palette: { a: "#4fc0e0", w: "#9c7449", t: "#e0c99a" },
   rows: [
     "aaaaaaaa",
     "aaaaaaaa",
@@ -119,7 +138,7 @@ export const MARKET = {
 };
 
 export const HOUSEBOAT = {
-  palette: { h: "#6b4a2f", r: "#8a3b2e", w: "#3a6ea5" },
+  palette: { h: "#7a5738", r: "#c9603f", w: "#3aa0c9" },
   rows: [
     "..rrrr..",
     ".rhhhhr.",
@@ -133,7 +152,7 @@ export const HOUSEBOAT = {
 };
 
 export const GARDEN = {
-  palette: { 1: "#6b4a2f", 2: "#4a7c3f", 3: "#d9a441" },
+  palette: { 1: "#7a5738", 2: "#63a848", 3: "#f7c9dc" },
   rows: [
     "11111111",
     "12121213",
@@ -150,7 +169,7 @@ export const GARDEN = {
 export const BURROW_STAGES = [
   {
     // bare hole
-    palette: { 1: "#8a6a45", 2: "#3d2a1a" },
+    palette: { 1: "#9c7449", 2: "#4a3524" },
     rows: [
       "..1111..",
       ".111111.",
@@ -164,7 +183,7 @@ export const BURROW_STAGES = [
   },
   {
     // bedding added — soft cream tuft at the entrance
-    palette: { 1: "#8a6a45", 2: "#3d2a1a", c: "#e8dcc0" },
+    palette: { 1: "#9c7449", 2: "#4a3524", c: "#f2e8d0" },
     rows: [
       "..1111..",
       ".111111.",
@@ -178,7 +197,7 @@ export const BURROW_STAGES = [
   },
   {
     // furnished — seed stash visible alongside the bedding
-    palette: { 1: "#8a6a45", 2: "#3d2a1a", c: "#e8dcc0", s: "#d9a441" },
+    palette: { 1: "#9c7449", 2: "#4a3524", c: "#f2e8d0", s: "#e8b552" },
     rows: [
       "..1111..",
       ".111111.",
@@ -195,7 +214,7 @@ export const BURROW_STAGES = [
 // ---------------------------------------------------------------- pickups --
 
 export const SEED_PICKUP = {
-  palette: { s: "#d9a441", d: "#a97a2f" },
+  palette: { s: "#e8b552", d: "#b8842f" },
   rows: [
     "........",
     "........",
@@ -209,7 +228,7 @@ export const SEED_PICKUP = {
 };
 
 export const BEDDING_PICKUP = {
-  palette: { c: "#e8dcc0", d: "#c9b896" },
+  palette: { c: "#f2e8d0", d: "#d9c9a0" },
   rows: [
     "........",
     "........",
@@ -223,7 +242,7 @@ export const BEDDING_PICKUP = {
 };
 
 export const WOOD_PICKUP = {
-  palette: { 1: "#8a6a45", 2: "#6b4a2f" },
+  palette: { 1: "#9c7449", 2: "#7a5738" },
   rows: [
     "........",
     ".11.....",
@@ -237,7 +256,7 @@ export const WOOD_PICKUP = {
 };
 
 export const STONE_PICKUP = {
-  palette: { 1: "#8a8a8a", 2: "#6a6a6a", 3: "#a0a0a0" },
+  palette: { 1: "#9a9086", 2: "#79706a", 3: "#b0a89e" },
   rows: [
     "........",
     "........",
@@ -251,7 +270,7 @@ export const STONE_PICKUP = {
 };
 
 export const TILE_SPRITES = {
-  G: [GRASS_A, GRASS_B],
+  G: [GRASS_A, GRASS_B, GRASS_C],
   W: [WATER],
   B: [BOULDER],
   K: [BUSH],
@@ -272,7 +291,7 @@ function mouseRows(faceRow) {
     "oaaaaaao",
     "oaaaaaao",
     faceRow,
-    "oaannaao",
+    "opannapo",
     "oassssao",
     ".oaaaao.",
     "..o..o..",
@@ -285,12 +304,12 @@ const FACE_UP = "oaaaaaao";
 
 function mousePalette(fur, shadow) {
   return {
-    o: "#2b241d",
+    o: "#4a2f1f",
     a: fur,
     s: shadow,
-    p: "#e8a0b0",
-    e: "#1b1b1b",
-    n: "#c96a80",
+    p: "#f7b0c4",
+    e: "#241a12",
+    n: "#dd7d96",
   };
 }
 
@@ -340,10 +359,10 @@ function toadRows() {
 
 function toadPalette(body, belly) {
   return {
-    o: "#2f3d28",
+    o: "#3a4a26",
     a: body,
     b: belly,
-    e: "#1b1b1b",
+    e: "#241a12",
   };
 }
 
@@ -357,16 +376,16 @@ export function makeToadSprites(body, belly) {
   };
 }
 
-export const PLAYER_SPRITES = makeMouseSprites("#d8d2c6", "#b0a99c");
-export const WEG_SPRITES = makeMouseSprites("#8a8478", "#69645a");
-export const SKITTERS_SPRITES = makeMouseSprites("#c97b4a", "#a45f37");
-export const DENNIS_SPRITES = makeMouseSprites("#8a7048", "#6b5636");
-export const JEFF_SPRITES = makeMouseSprites("#e8c66b", "#c9a94a");
-export const CLAUDIUS_SPRITES = makeMouseSprites("#7a8a99", "#5c6b78");
-export const RACHEL_SPRITES = makeMouseSprites("#9a8a5a", "#7a6c42");
-export const PEPPER_SPRITES = makeMouseSprites("#c9c9c9", "#a3a3a3");
-export const CHURT_SPRITES = makeMouseSprites("#c9a23a", "#a37f28");
-export const BART_SPRITES = makeToadSprites("#5a7a4a", "#c9c9a0");
+export const PLAYER_SPRITES = makeMouseSprites("#ede0c8", "#c9b896");
+export const WEG_SPRITES = makeMouseSprites("#948b7a", "#736a5a");
+export const SKITTERS_SPRITES = makeMouseSprites("#e0895a", "#b8683f");
+export const DENNIS_SPRITES = makeMouseSprites("#a3824f", "#7d6339");
+export const JEFF_SPRITES = makeMouseSprites("#f2d377", "#d4b154");
+export const CLAUDIUS_SPRITES = makeMouseSprites("#8a9aa8", "#687885");
+export const RACHEL_SPRITES = makeMouseSprites("#ab9a63", "#8a7a4a");
+export const PEPPER_SPRITES = makeMouseSprites("#d6d2c4", "#aeaa9c");
+export const CHURT_SPRITES = makeMouseSprites("#dbb048", "#b08a30");
+export const BART_SPRITES = makeToadSprites("#688f56", "#d9d4ac");
 
 export const NPC_SPRITE_SETS = {
   weg: WEG_SPRITES,
@@ -401,7 +420,7 @@ export const EXCLAIM = {
 // -------------------------------------------------------- burrow interior --
 
 export const FLOOR = {
-  palette: { 1: "#6b5540", 2: "#5c4835" },
+  palette: { 1: "#7d6247", 2: "#6b5238" },
   rows: [
     "11211121",
     "21121211",
@@ -415,7 +434,7 @@ export const FLOOR = {
 };
 
 export const DUG_WALL = {
-  palette: { 1: "#4a3826", 2: "#3a2c1c" },
+  palette: { 1: "#5a442e", 2: "#4a3524" },
   rows: [
     "11111111",
     "12121212",
@@ -429,7 +448,7 @@ export const DUG_WALL = {
 };
 
 export const DIG_FRONTIER = {
-  palette: { 1: "#5a4530", 2: "#3d2a1a", 3: "#6b4a2f" },
+  palette: { 1: "#6b5238", 2: "#4a3524", 3: "#7a5738" },
   rows: [
     "13131313",
     "31313131",
@@ -443,7 +462,7 @@ export const DIG_FRONTIER = {
 };
 
 export const INTERIOR_DOOR = {
-  palette: { 1: "#6b4a2f", 3: "#3d2a1a" },
+  palette: { 1: "#7a5738", 3: "#4a3524" },
   rows: [
     "11111111",
     "1......1",
@@ -457,7 +476,7 @@ export const INTERIOR_DOOR = {
 };
 
 export const SLEEPING_NOOK = {
-  palette: { c: "#e8dcc0", d: "#c9b896", o: "#8a6a45" },
+  palette: { c: "#f2e8d0", d: "#d9c9a0", o: "#9c7449" },
   rows: [
     "........",
     ".cccccc.",
@@ -471,7 +490,7 @@ export const SLEEPING_NOOK = {
 };
 
 export const WORKBENCH = {
-  palette: { w: "#8a6a45", d: "#5c3f26", t: "#a0a0a0" },
+  palette: { w: "#9c7449", d: "#6b4f34", t: "#b0a89e" },
   rows: [
     "........",
     "wwwwwwww",
@@ -486,7 +505,7 @@ export const WORKBENCH = {
 
 export const FURNITURE = {
   stool: {
-    palette: { w: "#8a6a45", d: "#5c3f26" },
+    palette: { w: "#9c7449", d: "#6b4f34" },
     rows: [
       "........",
       "..wwww..",
@@ -499,7 +518,7 @@ export const FURNITURE = {
     ],
   },
   table: {
-    palette: { w: "#8a6a45", d: "#5c3f26" },
+    palette: { w: "#9c7449", d: "#6b4f34" },
     rows: [
       "........",
       "wwwwwwww",
@@ -512,7 +531,7 @@ export const FURNITURE = {
     ],
   },
   shelf: {
-    palette: { w: "#8a6a45", d: "#5c3f26", i: "#d9a441" },
+    palette: { w: "#9c7449", d: "#6b4f34", i: "#e8b552" },
     rows: [
       "wwwwwwww",
       "w.i..i.w",
@@ -525,7 +544,7 @@ export const FURNITURE = {
     ],
   },
   rug: {
-    palette: { c: "#c9622f", d: "#a34a22", e: "#e8a56b" },
+    palette: { c: "#d9703f", d: "#b0552e", e: "#f2b57e" },
     rows: [
       "........",
       ".cccccc.",
@@ -538,7 +557,7 @@ export const FURNITURE = {
     ],
   },
   hearth: {
-    palette: { s: "#8a8a8a", f: "#e8503a", y: "#f0a030" },
+    palette: { s: "#9a9086", f: "#e8503a", y: "#f7b03a" },
     rows: [
       "........",
       "ssssssss",
@@ -551,7 +570,7 @@ export const FURNITURE = {
     ],
   },
   sprout: {
-    palette: { p: "#a3714a", g: "#4a7c3f" },
+    palette: { p: "#b3805a", g: "#63a848" },
     rows: [
       "........",
       "...g....",
