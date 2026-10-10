@@ -70,6 +70,38 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 .btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--bark); }
 .btn:focus-visible, #mute:focus-visible { outline: 3px solid var(--sawdust); outline-offset: 3px; }
 .key { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; text-align: left; font-size: 14px; }
+#banner {
+  position: fixed; left: 16px; right: 16px; top: 34%; display: grid; gap: 8px; justify-items: center;
+  text-align: center; pointer-events: none;
+}
+#banner b { font-size: clamp(32px, 10vw, 56px); line-height: 1; color: var(--sawdust); text-shadow: 3px 3px 0 var(--bark), -1px -1px 0 var(--bark); text-wrap: balance; animation: pop .35s ease-out; }
+#banner span { font-family: var(--util); font-size: 11px; letter-spacing: .14em; color: var(--sawdust); background: var(--bark); padding: 4px 8px; }
+@keyframes pop { from { transform: scale(1.7); opacity: 0; } to { transform: none; opacity: 1; } }
+#fight {
+  position: fixed; left: 0; right: 0; bottom: 0; display: grid; gap: 10px; justify-items: center;
+  padding: 0 16px calc(env(safe-area-inset-bottom, 0px) + 14px);
+}
+#prompt { width: min(420px, 100%); display: grid; gap: 7px; justify-items: center; }
+#promptLabel { font-family: var(--util); font-size: 11px; letter-spacing: .14em; text-shadow: 0 2px 0 #000; }
+#seq { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; min-height: 34px; }
+#seq i { font: 700 16px var(--display); font-style: normal; padding: 6px 10px; background: var(--bark); border: 2px solid #1a110a; color: var(--sawdust); }
+#seq i.done { background: #3f7a2b; opacity: .7; }
+#seq i.now { background: var(--flannel); transform: translateY(-3px); }
+.bar { width: 100%; height: 12px; box-sizing: border-box; background: #1a110a; border: 2px solid var(--bark); position: relative; overflow: hidden; }
+.bar > i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--sawdust); }
+#tugWrap { width: 100%; display: grid; gap: 4px; }
+#tugWrap .bar { height: 20px; background: #6b2a22; }
+#tugWrap .bar > i { background: #3f7a2b; }
+.tugLabels { display: flex; justify-content: space-between; font-family: var(--util); font-size: 10px; letter-spacing: .12em; }
+#pad { width: min(420px, 100%); display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+#pad button {
+  font: 700 17px var(--display); color: var(--sawdust); background: var(--flannel); cursor: pointer;
+  border: 3px solid #1a110a; box-shadow: 0 4px 0 #1a110a; padding: 14px 0 9px; display: grid; gap: 3px; touch-action: manipulation;
+}
+#pad button small { font: 9px var(--util); letter-spacing: .1em; opacity: .75; }
+#pad button.yank { background: #3f7a2b; }
+#pad button.hit { transform: translateY(3px); box-shadow: 0 1px 0 #1a110a; }
+#pad button:focus-visible { outline: 3px solid var(--sawdust); outline-offset: 2px; }
 .key em { font-style: normal; font-family: var(--util); font-size: 10px; letter-spacing: .08em; align-self: center; padding: 2px 5px; color: var(--sawdust); }
 </style>
 </head>
@@ -82,11 +114,31 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 </div>
 <button id="mute" type="button">SOUND ON</button>
 
+<div id="banner" hidden><b id="bannerMain"></b><span id="bannerSub"></span></div>
+
+<div id="fight" hidden>
+  <div id="prompt">
+    <div id="promptLabel">HIT THE COMBO</div>
+    <div id="seq"></div>
+    <div id="tugWrap" hidden>
+      <div class="tugLabels"><span>YOU</span><span>MOUSE</span></div>
+      <div class="bar"><i id="tugFill"></i></div>
+    </div>
+    <div class="bar"><i id="timerFill"></i></div>
+  </div>
+  <div id="pad">
+    <button type="button" data-move="punch">PUNCH<small>J</small></button>
+    <button type="button" data-move="kick">KICK<small>K</small></button>
+    <button type="button" data-move="elbow">ELBOW<small>L</small></button>
+    <button type="button" data-move="yank" class="yank">YANK<small>SPACE</small></button>
+  </div>
+</div>
+
 <div class="sign" id="title">
   <div class="board">
     <img src="img/lean.png" alt="The lumberjack leaning on his axe, grinning">
     <h1>Clean Split</h1>
-    <p>Tap when the needle crosses the green notch. Miss three swings and you're done for the day.</p>
+    <p>Tap when the needle crosses the green notch. Miss three swings and you're done for the day. Keep an eye on the treeline.</p>
     <div class="key">
       <em style="background:#3f7a2b">GREEN</em><span>Clean split, 3 pts, builds combo</span>
       <em style="background:#b58a1e">AMBER</em><span>Rough split, 1 pt</span>
@@ -119,7 +171,10 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
     chop2: { w: 364, h: 289, ax: 193.8 }, chop3: { w: 368, h: 296, ax: 180 }
   };
   const IMG = {};
-  for (const k of Object.keys(META)) { IMG[k] = new Image(); IMG[k].src = 'img/' + k + '.png'; }
+  for (const k of [...Object.keys(META), 'mouse', 'mouse_noaxe', 'sleep']) { IMG[k] = new Image(); IMG[k].src = 'img/' + k + '.png'; }
+  // The mouse: fy = y of its feet (the tail hangs below). The knocked-flat lumberjack reuses the nap sprite.
+  const MM = { w: 294, h: 393, ax: 122, fy: 307 };
+  const FLAT = { w: 400, h: 270 };
 
   const store = {
     get() { try { return +localStorage.getItem('cleanSplitBest') || 0; } catch (e) { return 0; } },
@@ -155,6 +210,10 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
     crack() { noise(0.25, 2200, 1.2, 0.9); tone(140, 0.18, 0.5, 'triangle', 60); },
     clean() { sfx.crack(); setTimeout(() => { tone(880, 0.12, 0.12, 'square'); setTimeout(() => tone(1320, 0.2, 0.1, 'square'), 70); }, 60); },
     thunk() { tone(110, 0.22, 0.6, 'sine', 55); noise(0.12, 400, 0.8, 0.5, 'lowpass'); },
+    squeak() { tone(1800, 0.09, 0.12, 'square', 2600); setTimeout(() => tone(2100, 0.12, 0.1, 'square', 3000), 110); },
+    punch() { noise(0.1, 700, 0.8, 0.9, 'lowpass'); tone(95, 0.12, 0.5, 'sine', 50); },
+    yank() { noise(0.06, 3000, 1, 0.3); tone(300 + Math.random() * 200, 0.05, 0.08, 'square'); },
+    win() { [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => tone(f, 0.16, 0.12, 'square'), i * 90)); },
     over() { tone(392, 0.25, 0.15, 'square'); setTimeout(() => tone(311, 0.25, 0.15, 'square'), 220); setTimeout(() => tone(233, 0.5, 0.15, 'square'), 440); }
   };
 
@@ -194,6 +253,9 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
     r(4, 1, 2, 11, '#1a110a'); r(4, 2, 1, 9, '#a8683a');
     r(0, 0, 6, 6, '#1a110a'); r(1, 1, 4, 4, '#c9ccd2'); r(1, 1, 1, 4, '#ffffff');
   });
+  const fistArt = pix(7, 6, (g, r) => { r(0, 0, 7, 6, '#1a110a'); r(1, 1, 5, 4, '#f2c49a'); r(2, 1, 1, 2, '#d89c70'); r(4, 1, 1, 2, '#d89c70'); });
+  const bootArt = pix(8, 6, (g, r) => { r(0, 0, 6, 6, '#1a110a'); r(0, 3, 8, 3, '#1a110a'); r(1, 1, 4, 4, '#7a3e1c'); r(1, 4, 6, 1, '#5a2c12'); });
+  const starArt = pix(5, 5, (g, r) => { r(2, 0, 1, 5, '#ffe27a'); r(0, 2, 5, 1, '#ffe27a'); r(1, 1, 3, 3, '#ffe27a'); });
   const axeOff = pix(10, 12, (g, r) => { g.globalAlpha = 0.3; g.drawImage(axeArt, 0, 0); });
 
   // ---------- background ----------
@@ -242,8 +304,12 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
     const s = ch / 346;
     const P = Math.max(2, Math.round((84 * s) / 12));
     const ax = Math.round(W / 2 - 40 * s);
+    const ms = (ch * 0.95) / MM.fy;
     L = {
-      groundY, ch, s, P, ax,
+      groundY, ch, s, P, ax, ms,
+      mChop: Math.round(ax + 150 * s - 6 * P - 150 * ms),
+      mStop: Math.round(Math.min(W - MM.ax * ms - 6, ax + 110 * s + 110 * ms)),
+      flatX: Math.round(Math.max((FLAT.w * s * 0.62) / 2 + 4, ax - 170 * s)),
       logX: Math.round(ax + 150 * s - 6 * P),
       stumpX: Math.round(ax + 150 * s - 10 * P),
       textY: Math.round(groundY - ch - 6),
@@ -260,7 +326,8 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
     needle: 0, dir: 1, speed: 0.8, zc: 0.5, good: 0.14, perfect: 0.05,
     log: 'pine', logY: 0, logVy: 0, logReady: true, wobble: 0,
     swingT: -1, judged: null, pending: null,
-    halves: [], chips: [], texts: [], pile: 0, shake: 0, flash: 0, t: 0
+    halves: [], chips: [], texts: [], pile: 0, shake: 0, flash: 0, t: 0,
+    ev: null, since: 0, mice: 0, muggedOut: false
   };
   window.claude?.hot?.snapshot?.(() => ({ best: S.best }));
   const boot = d => { if (d && d.best > S.best) S.best = d.best; refreshHud(); };
@@ -268,7 +335,7 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 
   function refreshHud() {
     $('score').textContent = S.score;
-    $('combo').innerHTML = S.mode === 'play' && S.combo >= 2
+    $('combo').innerHTML = S.mode === 'event' ? 'MOUSE ENCOUNTER' : S.mode === 'play' && S.combo >= 2
       ? 'Combo x' + S.combo + (mult() > 1 ? ' · ' + mult() + 'X PTS' : '')
       : 'Best <span id="bestTop">' + S.best + '</span>';
     const lv = $('lives'); lv.innerHTML = '';
@@ -295,8 +362,8 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 
   function start() {
     audio();
-    Object.assign(S, { mode: 'play', score: 0, combo: 0, lives: 3, n: 0, pile: 0, halves: [], chips: [], texts: [], swingT: -1, pending: null, needle: 0, dir: 1 });
-    $('title').hidden = true; $('over').hidden = true;
+    Object.assign(S, { mode: 'play', score: 0, combo: 0, lives: 3, n: 0, pile: 0, halves: [], chips: [], texts: [], swingT: -1, pending: null, needle: 0, dir: 1, ev: null, since: 0, mice: 0, muggedOut: false });
+    $('title').hidden = true; $('over').hidden = true; $('fight').hidden = true; $('mute').hidden = false; unbanner();
     nextLog(); refreshHud();
   }
 
@@ -326,6 +393,17 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
     S.score += pts; S.n++;
     if (S.log === 'birch' && clean && S.lives < 3) { S.lives++; addText('+1 AXE', '#8fc05a', W / 2, L.textY - 34); }
     addText((clean ? (S.combo >= 5 ? 'TIMBER!' : 'CLEAN SPLIT') : 'ROUGH SPLIT') + '  +' + pts, clean ? '#8fc05a' : '#e7b04a', W / 2, L.textY);
+    splitFx(clean);
+    S.since++;
+    if (shouldMouse()) setTimeout(() => { if (S.mode === 'play') startMouse(); }, 420);
+    else setTimeout(() => { if (S.mode === 'play') nextLog(); }, 380);
+    if (S.score > S.best) { S.best = S.score; store.set(S.best); }
+    refreshHud();
+  }
+
+  function splitFx(clean) {
+    const t = LOG_TYPES[S.log], P = L.P;
+    const lx = L.logX + 6 * P, ly = L.groundY - 6 * P - 7 * P;
     S.shake = clean ? 9 : 4; S.flash = clean ? 1 : 0;
     clean ? sfx.clean() : sfx.crack();
     const k = clean ? 1 : 0.6;
@@ -335,9 +413,6 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
     );
     for (let i = 0; i < (clean ? 16 : 7); i++) chip(lx, ly - 6 * P, Math.random() > 0.4 ? t.face : '#f3d9a4');
     S.logReady = false; S.logY = 99999;
-    setTimeout(() => { if (S.mode === 'play') nextLog(); }, 380);
-    if (S.score > S.best) { S.best = S.score; store.set(S.best); }
-    refreshHud();
   }
 
   function gameOver() {
@@ -345,11 +420,12 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
     const newBest = S.score >= S.best && S.score > 0;
     if (S.score > S.best) { S.best = S.score; store.set(S.best); }
     const zero = S.n === 0;
+    $('fight').hidden = true; $('mute').hidden = false; unbanner();
     $('overImg').src = zero ? 'img/hug.png' : 'img/sleep.png';
     $('overImg').alt = zero ? 'The lumberjack hugging a log' : 'The lumberjack asleep on a log';
-    $('overTitle').textContent = zero ? 'Hugged it instead' : 'Clocked out';
+    $('overTitle').textContent = S.muggedOut ? 'Mugged by a mouse' : zero ? 'Hugged it instead' : 'Clocked out';
     $('overScore').textContent = S.score;
-    $('overLine').textContent = zero ? 'Not a single round split. The wood thanks you.' : S.n + (S.n === 1 ? ' round' : ' rounds') + ' split before nap time.';
+    $('overLine').textContent = S.muggedOut ? 'It took your axe, your last swing and your dignity.' : zero ? 'Not a single round split. The wood thanks you.' : S.n + (S.n === 1 ? ' round' : ' rounds') + ' split before nap time.';
     $('overBest').textContent = newBest ? 'NEW PERSONAL BEST' : 'BEST ' + S.best;
     $('over').hidden = false; refreshHud();
     setTimeout(() => $('again').focus(), 50);
@@ -361,12 +437,25 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
   function addText(txt, col, x, y) { S.texts.push({ txt, col, x, y, life: 0 }); }
 
   // ---------- input ----------
-  cv.addEventListener('pointerdown', e => { e.preventDefault(); swing(); });
+  cv.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    if (S.mode === 'play') swing();
+    else if (S.mode === 'event' && S.ev.phase === 'mouse') mouseSwing();
+    else if (S.mode === 'event' && S.ev.phase === 'yank') fightInput('yank');
+  });
+  const KEYMOVE = { KeyJ: 'punch', Digit1: 'punch', KeyK: 'kick', Digit2: 'kick', KeyL: 'elbow', Digit3: 'elbow', Space: 'yank', Digit4: 'yank' };
   window.addEventListener('keydown', e => {
+    const fighting = S.mode === 'event' && (S.ev.phase === 'fight' || S.ev.phase === 'yank');
+    if (fighting && KEYMOVE[e.code]) { e.preventDefault(); if (!e.repeat || S.ev.phase === 'yank') fightInput(KEYMOVE[e.code]); return; }
     if (e.code === 'Space' || e.code === 'Enter') {
       if (S.mode === 'play') { e.preventDefault(); swing(); }
+      else if (S.mode === 'event' && S.ev.phase === 'mouse') { e.preventDefault(); mouseSwing(); }
     }
   });
+  for (const b of document.querySelectorAll('#pad button')) {
+    b.addEventListener('pointerdown', e => { e.preventDefault(); fightInput(b.dataset.move); });
+    b.addEventListener('keydown', e => { if (e.code === 'Enter') { e.preventDefault(); fightInput(b.dataset.move); } });
+  }
   $('start').addEventListener('click', start);
   $('again').addEventListener('click', start);
   $('mute').addEventListener('click', () => { muted = !muted; $('mute').textContent = muted ? 'SOUND OFF' : 'SOUND ON'; });
@@ -382,7 +471,8 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
     requestAnimationFrame(frame);
   }
   function update(dt) {
-    if (S.mode === 'play') {
+    if (S.mode === 'event') updateEvent(dt);
+    if (S.mode === 'play' || (S.mode === 'event' && S.ev.phase === 'mouse')) {
       S.needle += S.dir * S.speed * dt;
       if (S.needle > 1) { S.needle = 2 - S.needle; S.dir = -1; }
       if (S.needle < 0) { S.needle = -S.needle; S.dir = 1; }
@@ -421,7 +511,7 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
     rr(mx - 3, my - 3, mw + 6, mh + 6, '#6e4829');
     rr(mx, my, mw, mh, '#2a1c12');
     for (let x = mx + 10; x < mx + mw; x += 22) rr(x, my, 2, mh, '#33231a');
-    const live = S.mode === 'play';
+    const live = S.mode === 'play' || S.mode === 'event';
     const gL = mx + (S.zc - S.good) * mw, gW = S.good * 2 * mw;
     const pL = mx + (S.zc - S.perfect) * mw, pW = S.perfect * 2 * mw;
     rr(gL, my, gW, mh, live ? '#b58a1e' : '#6b5a2a');
@@ -434,7 +524,7 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
     rr(nx - 6, my - 14, 12, 6, '#1a110a'); rr(nx - 4, my - 12, 8, 3, '#d8372f');
     ctx.font = '10px Silkscreen, monospace'; ctx.textAlign = 'center'; ctx.fillStyle = '#f3d9a4';
     const t = LOG_TYPES[S.log];
-    const label = live ? ({ pine: 'PINE ROUND', oak: 'OAK ROUND · FAST', knot: 'KNOTTY · TIGHT NOTCH', birch: 'BIRCH · 3X' })[S.log] : 'TIMING';
+    const label = S.mode === 'event' ? 'MOUSE STYLE · ' + (3 - S.ev.swings) + ' LEFT' : live ? ({ pine: 'PINE ROUND', oak: 'OAK ROUND · FAST', knot: 'KNOTTY · TIGHT NOTCH', birch: 'BIRCH · 3X' })[S.log] : 'TIMING';
     ctx.fillText(label, W / 2, my + mh + 26);
   }
 
@@ -506,9 +596,9 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
       rr(h.side ? -3 * P : 2 * P, -6 * P, P, 12 * P, LOG_TYPES[h.type].face);
       ctx.restore();
     }
-    drawLumberjack();
+    if (S.mode === 'event') drawEvent(); else drawLumberjack();
     for (const c of S.chips) rr(c.x, c.y, c.s, c.s, c.col);
-    if (S.mode !== 'over') drawMeter();
+    if (S.mode !== 'over' && (S.mode !== 'event' || S.ev.phase === 'mouse')) drawMeter();
 
     ctx.textAlign = 'center';
     for (const t of S.texts) {
@@ -522,6 +612,330 @@ canvas { display: block; width: 100%; height: 100%; touch-action: none; }
     ctx.globalAlpha = 1;
     ctx.restore();
     if (S.flash > 0 && !reduce) { ctx.globalAlpha = S.flash * 0.18; rr(0, 0, W, H, '#fff3d0'); ctx.globalAlpha = 1; }
+  }
+
+
+  // ---------- the mouse encounter ----------
+  // A streak draws it out of the trees. It shoves you, takes the axe, shows off on three rounds,
+  // then you wrestle it back: two button combos, then a yank-mash tug of war.
+  const MOVE_NAMES = { punch: 'PUNCH', kick: 'KICK', elbow: 'ELBOW', yank: 'YANK' };
+  const POWS = ['POW', 'WHAM', 'BONK', 'THWACK', 'SMACK', 'KAPOW'];
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+  const lerp = (a, b, u) => a + (b - a) * u;
+  const ease = u => 1 - Math.pow(1 - Math.min(1, Math.max(0, u)), 3);
+
+  function shouldMouse() {
+    if (S.mode !== 'play' || S.lives <= 0) return false;
+    if (S.mice === 0 && S.n >= (location.hash === '#mouse' ? 1 : 15)) return true;
+    return S.n >= 8 && S.since >= 10 && (S.combo >= 4 || Math.random() < 0.15);
+  }
+  function banner(main, sub) {
+    $('bannerMain').textContent = main; $('bannerSub').textContent = sub || ''; $('bannerSub').hidden = !sub;
+    $('banner').hidden = false;
+    const m = $('bannerMain'); m.style.animation = 'none'; void m.offsetWidth; m.style.animation = '';
+  }
+  function unbanner() { $('banner').hidden = true; }
+
+  function startMouse() {
+    S.mode = 'event'; S.since = 0; S.mice++; S.combo = 0;
+    S.ev = { phase: '', t: 0, swings: 0, anim: -1, res: null, hits: 0, round: 0, seq: [], step: 0, timer: 0, limit: 1, tug: 0.45, peek: [], peekT: 0, fly: null, knocked: false };
+    setPhase('enter'); sfx.squeak(); refreshHud();
+  }
+  function mouseLog() {
+    nextLog();
+    S.perfect *= 1.4; S.good *= 1.3; S.speed *= 0.85;
+  }
+  function setPhase(p) {
+    const E = S.ev; E.phase = p; E.t = 0;
+    if (p === 'enter') banner('SQUEAK?', 'SOMETHING IN THE TREES');
+    if (p === 'shove') unbanner();
+    if (p === 'grab') banner('IT TOOK YOUR AXE', 'A VERY LARGE MOUSE');
+    if (p === 'swap') { banner("YOU'RE THE MOUSE NOW", 'TAP TO SHOW OFF · 3 SWINGS'); mouseLog(); }
+    if (p === 'mouse') unbanner();
+    if (p === 'getup') { banner('HEY!', "THAT'S MY AXE"); sfx.squeak(); }
+    if (p === 'fight') {
+      unbanner(); E.round = 0; E.hits = 0; newSeq();
+      $('fight').hidden = false; $('mute').hidden = true; $('seq').hidden = false; $('tugWrap').hidden = true;
+      S.shake = 8; sfx.punch();
+    }
+    if (p === 'yank') {
+      E.tug = 0.45; E.timer = E.limit = 4.2;
+      $('promptLabel').textContent = "IT WON'T LET GO · MASH YANK";
+      $('seq').hidden = true; $('tugWrap').hidden = false;
+    }
+    if (p === 'win' || p === 'lose') {
+      $('fight').hidden = true; $('mute').hidden = false;
+      for (let i = 0; i < 18; i++) chip(L.ax + 40 * L.s, L.groundY - L.ch * 0.42, i % 2 ? '#d9c7a0' : '#b8a27a');
+    }
+    if (p === 'win') { S.score += 20; banner('AXE RECOVERED', '+20 · THE MOUSE IS AIRBORNE'); sfx.win(); S.shake = 10; }
+    if (p === 'lose') { S.lives--; banner('MUGGED', 'IT DROPPED THE AXE AND RAN · -1 AXE'); sfx.thunk(); S.shake = 10; }
+    if (S.score > S.best) { S.best = S.score; store.set(S.best); }
+    refreshHud();
+  }
+  function endEvent() {
+    unbanner();
+    if (S.lives <= 0) { S.muggedOut = true; S.ev = null; gameOver(); return; }
+    S.mode = 'play'; S.ev = null; nextLog(); refreshHud();
+  }
+
+  function newSeq() {
+    const E = S.ev, len = E.round === 0 ? 3 : 4;
+    E.seq = Array.from({ length: len }, () => pick(['punch', 'punch', 'kick', 'elbow']));
+    E.step = 0;
+    E.timer = E.limit = Math.max(1.9, 3.4 - 0.3 * (S.mice - 1)) + (len - 3) * 0.7;
+    $('promptLabel').textContent = 'ROUND ' + (E.round + 1) + ' OF 2 · HIT THE COMBO';
+    renderSeq();
+  }
+  function renderSeq() {
+    const E = S.ev;
+    $('seq').innerHTML = E.seq.map((m, i) => '<i class="' + (i < E.step ? 'done' : i === E.step ? 'now' : '') + '">' + MOVE_NAMES[m] + '</i>').join('');
+  }
+  function flashBtn(move) {
+    const b = document.querySelector('#pad button[data-move="' + move + '"]');
+    if (!b) return; b.classList.add('hit'); setTimeout(() => b.classList.remove('hit'), 90);
+  }
+  function pow(kind) {
+    const E = S.ev, cx = L.ax + 40 * L.s, cy = L.groundY - L.ch * 0.42;
+    addText(pick(POWS) + '!', pick(['#f3d9a4', '#ffe27a', '#ffffff']), cx + (Math.random() - 0.5) * L.ch * 0.8, cy - L.ch * 0.25 + (Math.random() - 0.5) * 60);
+    E.peek.push({ kind, ang: Math.random() * Math.PI * 2, life: 0, dur: 0.28 });
+  }
+  function fightInput(move) {
+    const E = S.ev; if (S.mode !== 'event' || !E) return;
+    if (E.phase !== 'fight' && E.phase !== 'yank') return;
+    flashBtn(move);
+    if (E.phase === 'yank') {
+      if (move !== 'yank') return;
+      E.tug += 0.065; sfx.yank(); S.shake = 3;
+      if (E.tug >= 1) setPhase('win');
+      return;
+    }
+    if (move === E.seq[E.step]) {
+      E.step++; S.score += 2; S.shake = 7; sfx.punch();
+      pow(move === 'kick' ? 'boot' : 'fist');
+      if (E.step >= E.seq.length) { E.round++; if (E.round >= 2) setPhase('yank'); else newSeq(); }
+      else renderSeq();
+      refreshHud();
+    } else takeHit();
+  }
+  function takeHit() {
+    const E = S.ev; E.hits++; sfx.thunk(); S.shake = 12;
+    addText(E.hits >= 2 ? 'OUT-WRESTLED' : 'COUNTERED!', '#d8372f', W / 2, L.textY);
+    if (E.hits >= 2) setPhase('lose'); else newSeq();
+  }
+
+  function mouseSwing() {
+    const E = S.ev;
+    if (E.anim >= 0 || !S.logReady || E.swings >= 3) return;
+    const d = Math.abs(S.needle - S.zc);
+    E.res = d <= S.perfect + 0.006 ? 'clean' : d <= S.good + 0.006 ? 'rough' : 'miss';
+    E.anim = 0; sfx.whoosh(); setTimeout(() => sfx.whoosh(), 260);
+  }
+  function mouseImpact() {
+    const E = S.ev, P = L.P;
+    E.swings++;
+    if (E.res === 'miss') {
+      S.wobble = 1; S.shake = 5; sfx.thunk();
+      addText(pick(['FUMBLED IT', 'CLANG', 'SHOW-OFF FAIL']), '#d8372f', W / 2, L.textY);
+      for (let i = 0; i < 4; i++) chip(L.logX + 6 * P, L.groundY - 19 * P, '#c9ccd2');
+    } else {
+      const clean = E.res === 'clean', pts = clean ? 5 : 2;
+      S.score += pts; S.n++;
+      addText((clean ? pick(['FINESSE', 'STYLISH', 'MOUSE MAGIC', 'NO-LOOK SPLIT']) : 'SLOPPY') + '  +' + pts, clean ? '#8fc05a' : '#e7b04a', W / 2, L.textY);
+      splitFx(clean);
+      if (E.swings < 3) setTimeout(() => { if (S.ev === E && E.phase === 'mouse') mouseLog(); }, 380);
+    }
+    if (E.swings >= 3) setTimeout(() => { if (S.ev === E && E.phase === 'mouse') setPhase('getup'); }, 800);
+    if (S.score > S.best) { S.best = S.score; store.set(S.best); }
+    refreshHud();
+  }
+
+  function updateEvent(dt) {
+    const E = S.ev; E.t += dt;
+    if (E.fly) { E.fly.t += dt; if (E.fly.t >= E.fly.dur) E.fly = null; }
+    switch (E.phase) {
+      case 'enter': if (E.t >= 1.1) setPhase('shove'); break;
+      case 'shove':
+        if (!E.knocked && E.t >= 0.18) {
+          E.knocked = true; S.shake = 12; sfx.thunk(); addText('SHOVED!', '#d8372f', W / 2, L.textY);
+          E.fly = { t: 0, dur: 0.55, x0: L.ax + 30 * L.s, y0: L.groundY - L.ch * 0.9, x1: L.mStop - 90 * L.ms, y1: L.groundY - 250 * L.ms, h: 140 * L.s, spin: 3 };
+        }
+        if (E.t >= 0.75) setPhase('grab');
+        break;
+      case 'grab': if (E.t >= 1.7) setPhase('swap'); break;
+      case 'swap': if (E.t >= 1.2) setPhase('mouse'); break;
+      case 'mouse':
+        if (E.anim >= 0) {
+          const before = E.anim; E.anim += dt;
+          if (before < 0.8 && E.anim >= 0.8) mouseImpact();
+          if (E.anim >= 1.0) E.anim = -1;
+        }
+        break;
+      case 'getup': if (E.t >= 1.4) setPhase('fight'); break;
+      case 'fight':
+        E.timer -= dt;
+        $('timerFill').style.width = Math.max(0, E.timer / E.limit) * 100 + '%';
+        if (E.timer <= 0) takeHit();
+        break;
+      case 'yank':
+        E.tug -= (0.32 + 0.05 * S.mice) * dt; E.timer -= dt;
+        $('tugFill').style.width = Math.max(0, Math.min(1, E.tug)) * 100 + '%';
+        $('timerFill').style.width = Math.max(0, E.timer / E.limit) * 100 + '%';
+        if (E.tug <= 0 || E.timer <= 0) setPhase('lose');
+        break;
+      case 'win': case 'lose': if (E.t >= 1.9) endEvent(); break;
+    }
+    if (E.phase === 'fight' || E.phase === 'yank') {
+      E.peekT -= dt;
+      if (E.peekT <= 0) { E.peekT = 0.16; E.peek.push({ kind: pick(['jack', 'mouse', 'fist', 'boot', 'star', 'jack', 'mouse']), ang: Math.random() * Math.PI * 2, life: 0, dur: 0.4 }); }
+    }
+    for (const p of E.peek) p.life += dt;
+    E.peek = E.peek.filter(p => p.life < p.dur);
+  }
+
+  function drawMouseAt(x, flip, axe, rot, yOff) {
+    const img = IMG[axe ? 'mouse' : 'mouse_noaxe'];
+    if (!img.complete || !img.naturalWidth) return;
+    const ms = L.ms;
+    ctx.save();
+    ctx.fillStyle = 'rgba(0,0,0,.35)';
+    ctx.beginPath(); ctx.ellipse(x, L.groundY + 2, 55 * ms, 8 * ms, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+    ctx.translate(x, L.groundY + (yOff || 0));
+    if (flip) ctx.scale(-1, 1);
+    if (rot) { ctx.translate(0, (-MM.fy * ms) / 2); ctx.rotate(rot); ctx.translate(0, (MM.fy * ms) / 2); }
+    ctx.drawImage(img, -MM.ax * ms, -MM.fy * ms, MM.w * ms, MM.h * ms);
+    ctx.restore();
+  }
+  function drawFlat(x, rot) {
+    const img = IMG.sleep; if (!img.complete || !img.naturalWidth) return;
+    const fs = L.s * 0.62;
+    ctx.save();
+    ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+    ctx.translate(x, L.groundY); ctx.rotate(rot || 0);
+    ctx.drawImage(img, (-FLAT.w * fs) / 2, -FLAT.h * fs, FLAT.w * fs, FLAT.h * fs);
+    ctx.restore();
+    ctx.imageSmoothingEnabled = false;
+    const k = L.P * 0.8;
+    for (let i = 0; i < 3; i++) {
+      const a = S.t * 4 + i * 2.1;
+      ctx.drawImage(starArt, x + Math.cos(a) * 34 * L.s - 2.5 * k, L.groundY - FLAT.h * fs * 0.7 + Math.sin(a) * 9 - 2.5 * k, 5 * k, 5 * k);
+    }
+  }
+  function drawAxe(x, y, rot) {
+    const k = L.P * 0.95;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+    ctx.drawImage(axeArt, -5 * k, -6 * k, 10 * k, 12 * k);
+    ctx.restore();
+  }
+  function pixCircle(x, y, r, col) {
+    const st = L.P; ctx.fillStyle = col;
+    for (let yy = -r; yy <= r; yy += st) {
+      const w = Math.sqrt(Math.max(0, r * r - yy * yy));
+      ctx.fillRect(Math.round((x - w) / st) * st, Math.round((y + yy) / st) * st, Math.round((2 * w) / st) * st, st);
+    }
+  }
+  function drawPeek(p, cx, cy, R) {
+    const u = Math.sin(Math.PI * Math.min(1, p.life / p.dur));
+    const x = cx + Math.cos(p.ang) * R * (0.7 + 0.35 * u), y = cy + Math.sin(p.ang) * R * 0.62 * (0.7 + 0.35 * u);
+    const k = L.P, s = L.s;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(Math.sin(p.ang * 3) * 0.5);
+    ctx.globalAlpha = Math.min(1, u * 2);
+    if (p.kind === 'jack' && IMG.chop0.naturalWidth) {
+      ctx.imageSmoothingEnabled = true;
+      ctx.drawImage(IMG.chop0, 70, 20, 190, 170, -95 * s * 0.8, -85 * s * 0.8, 190 * s * 0.8, 170 * s * 0.8);
+    } else if (p.kind === 'mouse' && IMG.mouse_noaxe.naturalWidth) {
+      ctx.imageSmoothingEnabled = true;
+      ctx.drawImage(IMG.mouse_noaxe, 0, 0, 240, 170, -120 * L.ms * 0.75, -85 * L.ms * 0.75, 240 * L.ms * 0.75, 170 * L.ms * 0.75);
+    } else {
+      ctx.imageSmoothingEnabled = false;
+      const art = p.kind === 'fist' ? fistArt : p.kind === 'boot' ? bootArt : starArt;
+      const z = p.kind === 'star' ? k : k * 1.3;
+      ctx.drawImage(art, (-art.width * z) / 2, (-art.height * z) / 2, art.width * z, art.height * z);
+    }
+    ctx.restore();
+    ctx.imageSmoothingEnabled = false;
+  }
+  function drawCloud() {
+    const E = S.ev, cx = L.ax + 40 * L.s, cy = L.groundY - L.ch * 0.42, R = L.ch * 0.5;
+    const jig = reduce ? 0 : 1;
+    for (let pass = 0; pass < 2; pass++) {
+      for (let i = 0; i < 10; i++) {
+        const a = (i / 10) * Math.PI * 2 + S.t * 1.4 * jig;
+        const d = R * 0.55 + Math.sin(S.t * 9 * jig + i * 1.7) * R * 0.06;
+        const br = R * (0.36 + 0.05 * Math.sin(S.t * 11 * jig + i));
+        pixCircle(cx + Math.cos(a) * d, cy + Math.sin(a) * d * 0.62, br + (pass ? 0 : L.P), pass ? (i % 2 ? '#d9c7a0' : '#c8b285') : '#1a110a');
+      }
+    }
+    pixCircle(cx, cy, R * 0.55, '#e4d4ae');
+    if (E.phase === 'yank') {
+      const ax = cx + (0.5 - E.tug) * R * 1.4 + (Math.random() - 0.5) * 4 * jig;
+      drawAxe(ax, cy - R * 0.85, Math.PI * 0.15 + (0.5 - E.tug) * 0.8);
+    }
+    for (const p of E.peek) drawPeek(p, cx, cy, R);
+  }
+
+  function drawEvent() {
+    const E = S.ev, s = L.s, t = E.t;
+    const hop = reduce ? 0 : Math.abs(Math.sin(S.t * 16)) * 8 * s;
+    switch (E.phase) {
+      case 'enter':
+        drawLumberjack();
+        drawMouseAt(lerp(W + MM.w * L.ms, L.mStop, ease(t / 1.1)), true, false, 0, t < 1.1 ? -hop : 0);
+        break;
+      case 'shove': {
+        if (!E.knocked) drawLumberjack();
+        else { const u = ease((t - 0.18) / 0.4); drawFlat(lerp(L.ax, L.flatX, u), (1 - u) * -1.2); }
+        drawMouseAt(L.mStop - 40 * s * Math.sin(Math.PI * Math.min(1, t / 0.55)), true, false, 0, 0);
+        break;
+      }
+      case 'grab':
+        drawFlat(L.flatX, 0);
+        drawMouseAt(L.mStop, true, !E.fly, 0, E.fly ? 0 : -hop);
+        break;
+      case 'swap': {
+        const u = ease((t - 0.3) / 0.8);
+        drawFlat(L.flatX, 0);
+        drawMouseAt(lerp(L.mStop, L.mChop, u), t < 0.3, true, 0, u > 0 && u < 1 ? -hop : 0);
+        break;
+      }
+      case 'mouse': {
+        drawFlat(L.flatX, 0);
+        const a = E.anim, ms = L.ms, P = L.P;
+        const hand = { x: L.mChop + 100 * ms, y: L.groundY - 250 * ms };
+        const top = { x: L.logX + 6 * P, y: L.groundY - 20 * P };
+        if (a < 0) drawMouseAt(L.mChop, false, true, 0, 0);
+        else if (a < 0.3) drawMouseAt(L.mChop, false, true, (a / 0.3) * Math.PI * 2, -Math.sin((Math.PI * a) / 0.3) * 50 * s);
+        else if (a < 0.8) {
+          const u = (a - 0.3) / 0.5;
+          drawMouseAt(L.mChop, false, false, 0, -Math.sin(Math.PI * u) * 10 * s);
+          drawAxe(lerp(hand.x, top.x, u), lerp(hand.y, top.y, u) - 4 * 230 * s * u * (1 - u), u * Math.PI * 4 + Math.PI / 2);
+        } else {
+          const u = (a - 0.8) / 0.2;
+          drawMouseAt(L.mChop, false, u >= 1, 0, 0);
+          if (u < 1) drawAxe(lerp(top.x, hand.x, u), lerp(top.y, hand.y, u) - 4 * 60 * s * u * (1 - u), Math.PI / 2 - u * Math.PI * 2);
+        }
+        break;
+      }
+      case 'getup':
+        drawFlat(L.flatX + (reduce ? 0 : Math.sin(S.t * 60) * 3), 0);
+        drawMouseAt(L.mChop, t > 0.4, true, 0, 0);
+        break;
+      case 'fight': case 'yank':
+        drawCloud();
+        break;
+      case 'win':
+        drawLumberjack();
+        drawMouseAt(L.ax + 70 * s + t * 650, true, false, t * 12, -(t * 700 - t * t * 300) * s);
+        break;
+      case 'lose':
+        drawLumberjack();
+        drawMouseAt(L.ax + 90 * s + t * 480, false, false, 0, -hop);
+        break;
+    }
+    if (E.fly) {
+      const f = E.fly, u = f.t / f.dur;
+      drawAxe(lerp(f.x0, f.x1, u), lerp(f.y0, f.y1, u) - 4 * f.h * u * (1 - u), u * Math.PI * 2 * f.spin);
+    }
   }
 
   resize(); refreshHud();
