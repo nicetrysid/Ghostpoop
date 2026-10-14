@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Big Tree Scout</title>
+<meta name="theme-color" content="#2f4a3a">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+/* Layout: one full-screen map, a thin status bar on top, a thumb toolbar at the bottom,
+   and sheets that slide up over the lower half. Built for sun glare and gloves. */
+:root {
+  --bg: #eef1ec;        /* sage-grey paper */
+  --panel: #ffffff;
+  --ink: #18201b;
+  --muted: #5b675f;
+  --line: #cfd6cf;
+  --accent: #2f4a3a;    /* juniper foliage */
+  --accent-ink: #f2f6f1;
+  --berry: #4f6f9a;     /* juniper berry blue, for your trees */
+  --heat: #b3246b;      /* candidate spots: a hue no land-status color uses */
+  --warn: #9a5b00;
+  --ok: #2c7a3f;
+  --bad: #b3261e;
+  --display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --body: "Barlow", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --tb-h: 66px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121613; --panel: #1b211d; --ink: #e6ebe5; --muted: #9aa69d; --line: #2e3831;
+    --accent: #8fb79c; --accent-ink: #0f1511; --berry: #8eaedb; --heat: #ff5fa8;
+    --warn: #e0a54a; --ok: #6fcf87; --bad: #ff8a80; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121613; --panel: #1b211d; --ink: #e6ebe5; --muted: #9aa69d; --line: #2e3831;
+  --accent: #8fb79c; --accent-ink: #0f1511; --berry: #8eaedb; --heat: #ff5fa8;
+  --warn: #e0a54a; --ok: #6fcf87; --bad: #ff8a80; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; margin: 0; }
+body { position: fixed; inset: 0; background: var(--bg); color: var(--ink); font: 16px/1.4 var(--body); overflow: hidden; overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
+button, input, select, textarea { font: inherit; color: inherit; }
+#map { position: fixed; inset: 0; background: var(--bg); }
+
+.topbar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+  padding: calc(env(safe-area-inset-top, 0px) + 8px) 12px 8px;
+  display: flex; align-items: center; gap: 10px;
+  background: color-mix(in srgb, var(--panel) 88%, transparent);
+  border-bottom: 1px solid var(--line); backdrop-filter: blur(6px);
+}
+.brand { font: 700 20px/1 var(--display); letter-spacing: .02em; text-transform: uppercase; color: var(--accent); }
+.gps { margin-left: auto; font: 600 14px/1 var(--display); letter-spacing: .04em; color: var(--muted); font-variant-numeric: tabular-nums; text-align: right; }
+.gps b { color: var(--ink); }
+
+.crosshair { position: fixed; left: 50%; top: 50%; width: 28px; height: 28px; margin: -14px 0 0 -14px; z-index: 900; pointer-events: none; }
+.crosshair::before, .crosshair::after { content: ""; position: absolute; background: var(--ink); opacity: .7; }
+.crosshair::before { left: 13px; top: 0; width: 2px; height: 28px; }
+.crosshair::after { top: 13px; left: 0; height: 2px; width: 28px; }
+
+.toolbar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 1000;
+  padding: 6px 8px calc(env(safe-area-inset-bottom, 0px) + 6px);
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px;
+  background: var(--panel); border-top: 1px solid var(--line); min-height: var(--tb-h);
+}
+.tb { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 2px; border: 0; border-radius: 10px; background: transparent; font: 600 13px/1 var(--display); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); min-height: 52px; }
+.tb svg { width: 26px; height: 26px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.tb[aria-pressed="true"], .tb.active { color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.tb.primary { color: var(--accent-ink); background: var(--accent); }
+.tb:focus-visible, .btn:focus-visible, .chip:focus-visible { outline: 3px solid var(--berry); outline-offset: 2px; }
+
+.sheet {
+  position: fixed; left: 0; right: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + var(--tb-h)); z-index: 900; max-height: calc(78% - var(--tb-h));
+  display: flex; flex-direction: column;
+  background: var(--panel); border-top-left-radius: 16px; border-top-right-radius: 16px;
+  box-shadow: 0 -8px 30px rgba(0,0,0,.25); transform: translateY(0); transition: transform .22s ease;
+}
+.sheet[hidden] { display: flex !important; transform: translateY(calc(100% + var(--tb-h) + 40px)); pointer-events: none; visibility: hidden; transition: transform .22s ease, visibility 0s linear .22s; }
+.sheet header { display: flex; align-items: center; gap: 8px; padding: 12px 16px 8px; border-bottom: 1px solid var(--line); }
+.sheet h2 { margin: 0; font: 700 22px/1.1 var(--display); text-transform: uppercase; letter-spacing: .03em; }
+.sheet .close { margin-left: auto; border: 0; background: transparent; font: 600 15px var(--display); text-transform: uppercase; letter-spacing: .05em; color: var(--muted); padding: 8px; }
+.sheet .body { overflow-y: auto; padding: 12px 16px 16px; display: flex; flex-direction: column; gap: 14px; }
+@media (prefers-reduced-motion: reduce) { .sheet { transition: none; } }
+
+.sheet .body > * { flex-shrink: 0; }
+label.f { display: flex; flex-direction: column; gap: 4px; font-size: 14px; color: var(--muted); }
+input[type=text], input[type=number], select, textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--ink); font-size: 17px; }
+textarea { min-height: 70px; resize: vertical; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; }
+.row > * { flex: 1 1 0; min-width: 0; }
+.seg { display: flex; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.seg button { flex: 1; padding: 12px 6px; border: 0; background: var(--bg); font: 600 17px var(--display); letter-spacing: .04em; text-transform: uppercase; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.btn { padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); font: 600 17px/1.1 var(--display); letter-spacing: .04em; text-transform: uppercase; }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.danger { color: var(--bad); }
+.btn:disabled { opacity: .5; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { padding: 8px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--bg); font-size: 15px; }
+.chip[aria-pressed="true"] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, var(--bg)); font-weight: 600; }
+.hint { font-size: 14px; color: var(--muted); margin: 0; }
+.eyebrow { font: 600 13px/1 var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 0; }
+.status { font-size: 14px; padding: 10px 12px; border-radius: 10px; background: var(--bg); border: 1px solid var(--line); }
+.status.warn { border-color: var(--warn); }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: 15px; margin: 0; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; font-variant-numeric: tabular-nums; min-width: 0; overflow-wrap: anywhere; }
+.list { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.item { display: flex; align-items: center; gap: 10px; padding: 12px; border: 0; border-bottom: 1px solid var(--line); background: transparent; text-align: left; width: 100%; }
+.item:last-child { border-bottom: 0; }
+.item .dot { width: 12px; height: 12px; border-radius: 50%; flex: none; }
+.item .t { flex: 1; min-width: 0; }
+.item .t b { display: block; font-weight: 600; }
+.item .t span { font-size: 13px; color: var(--muted); }
+.item .n { font: 600 16px var(--display); font-variant-numeric: tabular-nums; color: var(--muted); }
+.legend { display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+.legend div { display: flex; align-items: center; gap: 8px; }
+.legend img { width: 20px; height: 20px; }
+.check { display: flex; justify-content: space-between; gap: 10px; font-size: 15px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.check:last-child { border-bottom: 0; }
+.check .s-ok { color: var(--ok); font-weight: 600; }
+.check .s-bad { color: var(--bad); font-weight: 600; }
+.check .s-wait { color: var(--muted); }
+.range { display: flex; align-items: center; gap: 10px; }
+.range input { flex: 1; }
+
+.toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 84px); transform: translateX(-50%); z-index: 1200; max-width: calc(100% - 32px); padding: 10px 16px; border-radius: 12px; background: var(--ink); color: var(--bg); font-size: 15px; box-shadow: 0 6px 18px rgba(0,0,0,.3); }
+
+/* Map markers */
+.tree-pin { width: 22px; height: 22px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.5); }
+.cand-pin { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--heat); color: #fff; font: 700 15px/1 var(--display); border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.5); }
+.empty-pin { width: 16px; height: 16px; border: 3px solid #fff; background: #6b6b6b; transform: rotate(45deg); box-shadow: 0 1px 4px rgba(0,0,0,.5); }
+.leaflet-popup-content-wrapper, .leaflet-popup-tip { background: var(--panel); color: var(--ink); }
+.leaflet-popup-content { margin: 12px 14px; font: 15px/1.4 var(--body); min-width: 220px; }
+.leaflet-popup-content h3 { margin: 0 0 6px; font: 700 18px var(--display); text-transform: uppercase; letter-spacing: .03em; }
+.pop-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.pop-actions .btn { padding: 8px 10px; font-size: 15px; }
+.leaflet-top.leaflet-right { top: calc(env(safe-area-inset-top, 0px) + 52px); }
+.leaflet-bottom { bottom: calc(env(safe-area-inset-bottom, 0px) + 70px); }
+.leaflet-control-scale-line { background: color-mix(in srgb, var(--panel) 80%, transparent); color: var(--ink); border-color: var(--ink); }
+</style>
+</head>
+<body>
+<div id="map" role="application" aria-label="Map"></div>
+<div class="crosshair" aria-hidden="true"></div>
+
+<div class="topbar">
+  <span class="brand">Big Tree Scout</span>
+  <span class="gps" id="gps">GPS off</span>
+</div>
+
+<nav class="toolbar" aria-label="Tools">
+  <button class="tb" id="tb-locate" aria-pressed="false"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8"/></svg>Locate</button>
+  <button class="tb primary" id="tb-add"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Add</button>
+  <button class="tb" id="tb-find"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>Find</button>
+  <button class="tb" id="tb-layers"><svg viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/></svg>Layers</button>
+  <button class="tb" id="tb-trees"><svg viewBox="0 0 24 24"><path d="M12 3l-5 7h3l-4 6h12l-4-6h3z"/><path d="M12 16v5"/></svg>Trees</button>
+</nav>
+
+<!-- Add / edit tree -->
+<section class="sheet" id="sh-add" hidden aria-labelledby="h-add">
+  <header><h2 id="h-add">Log a tree</h2><button class="close" data-close>Close</button></header>
+  <div class="body">
+    <div class="seg" id="add-kind" role="group" aria-label="What are you logging">
+      <button data-kind="tree" aria-pressed="true">Big tree</button>
+      <button data-kind="empty" aria-pressed="false">Checked, none</button>
+    </div>
+    <p class="hint" id="kind-hint"></p>
+    <div class="seg" id="add-species" role="group" aria-label="Species">
+      <button data-sp="juniper" aria-pressed="true">Juniper</button>
+      <button data-sp="pinyon" aria-pressed="false">Pinyon</button>
+      <button data-sp="oak" aria-pressed="false">Oak</button>
+    </div>
+    <label class="f" id="type-wrap">Type (write in any name; it's remembered)
+      <input type="text" id="add-type" list="type-list" autocomplete="off" placeholder="e.g. Utah juniper">
+      <datalist id="type-list"></datalist>
+    </label>
+    <div class="chips" id="type-chips"></div>
+    <div class="row" id="size-row">
+      <label class="f">Trunk around (in)<input type="number" id="add-circ" inputmode="decimal" min="0"></label>
+      <label class="f">Height (ft)<input type="number" id="add-height" inputmode="decimal" min="0"></label>
+      <label class="f">Crown (ft)<input type="number" id="add-crown" inputmode="decimal" min="0"></label>
+    </div>
+    <p class="hint" id="add-points"></p>
+    <label class="f">Notes<textarea id="add-notes" placeholder="Multi-stem? Dead top? Shreddy bark?"></textarea></label>
+    <div class="seg" id="add-where" role="group" aria-label="Location">
+      <button data-where="gps" aria-pressed="true">My location</button>
+      <button data-where="cross" aria-pressed="false">Map crosshair</button>
+    </div>
+    <p class="status" id="add-loc">Location: waiting for GPS…</p>
+    <div class="row">
+      <button class="btn danger" id="add-delete" hidden>Delete</button>
+      <button class="btn primary" id="add-save">Save</button>
+    </div>
+    <div class="row" id="del-confirm" hidden>
+      <span class="hint">Delete this entry for good?</span>
+      <button class="btn danger" id="del-yes">Yes, delete</button>
+      <button class="btn" id="del-no">Keep</button>
+    </div>
+  </div>
+</section>
+
+<!-- Find look-alike ground -->
+<section class="sheet" id="sh-find" hidden aria-labelledby="h-find">
+  <header><h2 id="h-find">Find more</h2><button class="close" data-close>Close</button></header>
+  <div class="body">
+    <p class="hint">Scores an area about 7 miles square around the map crosshair by how much each spot looks like the trees you've logged. It learns from all your trees, wherever they are.</p>
+    <label class="f">Learn from<select id="find-target"></select></label>
+    <p class="eyebrow">Match on</p>
+    <div class="chips" id="find-factors">
+      <button class="chip" data-f="elev" aria-pressed="true">Elevation</button>
+      <button class="chip" data-f="slope" aria-pressed="true">Steepness</button>
+      <button class="chip" data-f="aspect" aria-pressed="true">Facing direction</button>
+      <button class="chip" data-f="ravine" aria-pressed="true">Ravine / draw</button>
+      <button class="chip" data-f="water" aria-pressed="true">Watershed size</button>
+      <button class="chip" data-f="road" aria-pressed="true">Distance from road</button>
+    </div>
+    <label class="f">How close a match
+      <div class="range"><span class="hint">Loose</span><input type="range" id="find-bw" min="0.25" max="0.9" step="0.05" value="0.5"><span class="hint">Strict</span></div>
+    </label>
+    <button class="btn primary" id="find-run">Score this area</button>
+    <p class="status" id="find-status" hidden></p>
+    <div id="find-results" hidden>
+      <p class="eyebrow">Best spots, ranked</p>
+      <div class="list" id="find-list"></div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn" id="find-clear">Clear heat map</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Layers -->
+<section class="sheet" id="sh-layers" hidden aria-labelledby="h-layers">
+  <header><h2 id="h-layers">Layers</h2><button class="close" data-close>Close</button></header>
+  <div class="body">
+    <p class="eyebrow">Base map</p>
+    <div class="seg" id="base-seg" role="group" aria-label="Base map">
+      <button data-base="topo" aria-pressed="true">Topo</button>
+      <button data-base="img" aria-pressed="false">Satellite</button>
+    </div>
+    <p class="eyebrow">Overlays</p>
+    <div class="chips" id="ov-chips">
+      <button class="chip" data-ov="land" aria-pressed="true">Land ownership</button>
+      <button class="chip" data-ov="relief" aria-pressed="false">Shaded relief</button>
+      <button class="chip" data-ov="geo" aria-pressed="false">Geology</button>
+    </div>
+    <label class="f">Ownership opacity
+      <input type="range" id="land-op" min="0.15" max="0.9" step="0.05" value="0.45">
+    </label>
+    <p class="eyebrow">Land ownership key</p>
+    <div class="legend" id="legend"><p class="hint">Loading key from BLM…</p></div>
+    <p class="hint">Unshaded ground is private or unrecorded. Tap anywhere on the map to see who manages it. This is the BLM's surface management map, not a survey. Corners and small parcels can be off, and tribal land needs a tribal permit.</p>
+  </div>
+</section>
+
+<!-- Trees list, export, data check -->
+<section class="sheet" id="sh-trees" hidden aria-labelledby="h-trees">
+  <header><h2 id="h-trees">Your trees</h2><button class="close" data-close>Close</button></header>
+  <div class="body">
+    <p class="hint" id="trees-summary"></p>
+    <div class="list" id="trees-list"></div>
+    <p class="eyebrow">Share &amp; back up</p>
+    <div class="row">
+      <button class="btn" id="ex-share">Send to someone</button>
+      <button class="btn" id="ex-json">Save backup</button>
+    </div>
+    <div class="row">
+      <button class="btn" id="ex-gpx">GPX for GPS apps</button>
+      <button class="btn" id="ex-csv">Spreadsheet (CSV)</button>
+    </div>
+    <label class="btn" style="text-align:center">Import file<input type="file" id="ex-import" accept=".json,.gpx,.csv,application/json,application/gpx+xml,text/csv" hidden></label>
+    <p class="eyebrow">Offline</p>
+    <button class="btn" id="off-save">Save this area for no-signal use</button>
+    <p class="status" id="off-status" hidden></p>
+    <button class="btn" id="fp-redo">Recompute terrain for all trees</button>
+    <p class="eyebrow">Data sources</p>
+    <button class="btn" id="dc-run">Run data check</button>
+    <div id="dc-out"></div>
+  </div>
+</section>
+
+<div class="toast" id="toast" hidden role="status"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="analysis.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

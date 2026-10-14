@@ -1,0 +1,14 @@
+{
+  "name": "Big Tree Scout",
+  "short_name": "Tree Scout",
+  "description": "Log big juniper, pinyon and oak, and find look-alike ground nearby.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#141815",
+  "theme_color": "#2f4a3a",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
