@@ -149,6 +149,70 @@ for (const btn of document.querySelectorAll('[data-act]')) {
   btn.addEventListener('pointercancel', off)
   btn.addEventListener('pointerleave', off)
 }
+// Floating joystick: the base appears wherever the thumb lands.
+const stick = document.getElementById('stick')
+if (stick) {
+  const base = document.getElementById('stick-base')
+  const knob = document.getElementById('stick-knob')
+  const hint = document.getElementById('stick-hint')
+  const R = 50
+  let id = null
+  let ox = 0
+  let oy = 0
+  const setDirs = (dx, dy) => {
+    press('left', dx < -16)
+    press('right', dx > 16)
+    // Vertical needs a firmer push so running doesn't trigger climbing.
+    press('up', dy < -30 && Math.abs(dy) > Math.abs(dx) * 0.6)
+    press('down', dy > 30 && Math.abs(dy) > Math.abs(dx) * 0.6)
+  }
+  const place = (el, x, y) => {
+    el.style.left = x + 'px'
+    el.style.top = y + 'px'
+  }
+  stick.addEventListener('pointerdown', (e) => {
+    e.preventDefault()
+    audio.unlock()
+    press('start', true)
+    if (id !== null) return
+    id = e.pointerId
+    stick.setPointerCapture(id)
+    ox = e.clientX
+    oy = e.clientY
+    place(base, ox, oy)
+    place(knob, ox, oy)
+    base.hidden = false
+    knob.hidden = false
+    if (hint) hint.hidden = true
+  })
+  stick.addEventListener('pointermove', (e) => {
+    if (e.pointerId !== id) return
+    let dx = e.clientX - ox
+    let dy = e.clientY - oy
+    const d = Math.hypot(dx, dy)
+    // Drag past the rim and the base follows the thumb.
+    if (d > R) {
+      ox += (dx / d) * (d - R)
+      oy += (dy / d) * (d - R)
+      dx = e.clientX - ox
+      dy = e.clientY - oy
+      place(base, ox, oy)
+    }
+    place(knob, ox + dx, oy + dy)
+    setDirs(dx, dy)
+  })
+  const end = (e) => {
+    if (e.pointerId !== id) return
+    id = null
+    base.hidden = true
+    knob.hidden = true
+    setDirs(0, 0)
+    press('start', false)
+  }
+  stick.addEventListener('pointerup', end)
+  stick.addEventListener('pointercancel', end)
+}
+
 canvas.addEventListener('pointerdown', () => {
   press('start', true)
   audio.unlock()
