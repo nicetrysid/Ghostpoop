@@ -561,9 +561,9 @@ function updatePlayer(dt) {
     if (p.onThorns) hurtPlayer(1, p.x + p.face * 10, true)
   }
 
-  // Binoculars: hold look (or down while standing still)
-  const looking = keys.look || (keys.down && p.onGround && !dir && !p.climbing && !standingOnOneWay(p))
-  p.look = looking && p.onGround && !dir ? Math.min(1, p.look + dt * 3) : Math.max(0, p.look - dt * 4)
+  // Binoculars: only while the look button is held and standing still.
+  const looking = keys.look && p.onGround && !dir && !p.climbing && p.attack <= 0
+  p.look = looking ? Math.min(1, p.look + dt * 3) : Math.max(0, p.look - dt * 4)
 
   // Attacks
   if (consume('chop') && p.attack <= 0 && !p.climbing) {
@@ -1694,19 +1694,29 @@ function drawHUD() {
   }
 }
 
+let binocularMask = null
+
 function drawBinocularMask() {
   const k = player.look
   if (k <= 0) return
-  ctx.save()
+  if (!binocularMask) {
+    // Black frame with two overlapping lenses punched out.
+    binocularMask = document.createElement('canvas')
+    binocularMask.width = W
+    binocularMask.height = H
+    const g = binocularMask.getContext('2d')
+    g.fillStyle = '#000'
+    g.fillRect(0, 0, W, H)
+    g.globalCompositeOperation = 'destination-out'
+    for (const cx of [W / 2 - 150, W / 2 + 150]) {
+      g.beginPath()
+      g.arc(cx, H / 2, 210, 0, Math.PI * 2)
+      g.fill()
+    }
+  }
   ctx.globalAlpha = k
-  ctx.fillStyle = '#000'
-  ctx.beginPath()
-  ctx.rect(0, 0, W, H)
-  const r = 210
-  ctx.arc(W / 2 - 150, H / 2, r, 0, Math.PI * 2, true)
-  ctx.arc(W / 2 + 150, H / 2, r, 0, Math.PI * 2, true)
-  ctx.fill('evenodd')
-  ctx.restore()
+  ctx.drawImage(binocularMask, 0, 0)
+  ctx.globalAlpha = 1
 }
 
 function render() {
@@ -1807,7 +1817,7 @@ function drawTitle() {
   ctx.fillRect(0, 446, W, 94)
   const blink = Math.floor(game.time * 2) % 2 === 0
   if (blink) text('Press Enter or tap to start', W / 2, 470, 24, '#ffd23f')
-  text('Move: ←→/A D   Jump: Space/Z   Chop: J/X   Throw axe: K/C   Climb: ↑↓   Binoculars: Shift/↓', W / 2, 502, 14, '#f4e2c0', 'center', null)
+  text('Move: ←→/A D   Jump: Space/Z   Chop: J/X   Throw axe: K/C   Climb: ↑↓   Binoculars: Shift/B', W / 2, 502, 14, '#f4e2c0', 'center', null)
   text('"Chop what you can, explore what you can\'t."', W / 2, 524, 14, '#e2b07a', 'center', null)
 }
 
