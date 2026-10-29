@@ -14,3 +14,11 @@ The React Compiler is not enabled on this template because of its impact on dev 
 ## Expanding the Oxlint configuration
 
 If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+
+## Lumberjack vs. the Plants
+
+A side-scrolling platformer at `lumberjack/` (plain canvas, no React). Run `npm run dev` and open `/lumberjack/`.
+
+- Move: ←→ / A D · Jump: Space / Z · Chop: J / X · Throw axe: K / C · Climb trunks: ↑↓ · Binoculars: Shift (or ↓ while standing) · Pause: Esc / P · Mute: M
+- Touch controls appear on phones (landscape).
+- Levels live in `lumberjack/levels.js` as stitched chunks; sprites are in `public/lumberjack/sprites/`.

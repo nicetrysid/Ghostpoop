@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Lumberjack vs. the Plants</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@700&display=swap" rel="stylesheet" />
+    <style>
+      html, body {
+        margin: 0;
+        height: 100%;
+        background: #0d1117;
+        overflow: hidden;
+        touch-action: none;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+      #wrap {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      canvas {
+        width: min(100vw, calc(100vh * 16 / 9));
+        height: min(100vh, calc(100vw * 9 / 16));
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
+        background: #000;
+      }
+      #touch {
+        display: none;
+        position: fixed;
+        inset: auto 0 0 0;
+        padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+        justify-content: space-between;
+        pointer-events: none;
+      }
+      @media (pointer: coarse) {
+        #touch { display: flex; }
+      }
+      .pad { display: grid; gap: 8px; pointer-events: auto; }
+      .dpad { grid-template-columns: repeat(3, 56px); grid-template-rows: repeat(2, 56px); }
+      .acts { grid-template-columns: repeat(2, 64px); grid-template-rows: repeat(2, 56px); }
+      .pad button {
+        border: 2px solid rgba(255, 230, 190, 0.35);
+        border-radius: 12px;
+        background: rgba(40, 24, 14, 0.28);
+        color: #f4e2c0;
+        font: 700 16px "Pixelify Sans", monospace;
+        touch-action: none;
+      }
+      .pad button.on { background: rgba(176, 122, 64, 0.75); }
+      #rotate {
+        display: none;
+        position: fixed;
+        inset: 0;
+        align-items: center;
+        justify-content: center;
+        color: #f4e2c0;
+        font: 700 22px "Pixelify Sans", monospace;
+        background: #0d1117;
+        text-align: center;
+        padding: 24px;
+      }
+      @media (pointer: coarse) and (orientation: portrait) {
+        #rotate { display: flex; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="wrap"><canvas id="game"></canvas></div>
+    <div id="touch">
+      <div class="pad dpad">
+        <span></span><button data-act="up">▲</button><span></span>
+        <button data-act="left">◀</button><button data-act="down">▼</button><button data-act="right">▶</button>
+      </div>
+      <div class="pad acts">
+        <button data-act="throw">THROW</button><button data-act="pause">II</button>
+        <button data-act="chop">CHOP</button><button data-act="jump">JUMP</button>
+      </div>
+    </div>
+    <div id="rotate">Turn your phone sideways.<br />The trees are waiting.</div>
+    <script type="module" src="./game.js"></script>
+  </body>
+</html>
